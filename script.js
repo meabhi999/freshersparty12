@@ -88,7 +88,7 @@ function renderNames(names){
 let lastNamesJSON='';
 async function fetchNames(){
   try{
-    const res=await fetch('/.netlify/functions/names');
+    const res=await fetch('/.netlify/functions/names',{cache:'no-store'});
     if(!res.ok)return;
     const names=await res.json();
     const asJSON=JSON.stringify(names);
