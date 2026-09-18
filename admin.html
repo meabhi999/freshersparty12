@@ -5,12 +5,16 @@
 <title>Manage Names</title>
 <meta name="robots" content="noindex">
 <style>
-  body{background:#0f0a18;color:#fff;font-family:system-ui,sans-serif;padding:24px;max-width:480px;margin:0 auto}
+  body{background:#0f0a18;color:#fff;font-family:system-ui,sans-serif;padding:24px;max-width:560px;margin:0 auto}
   h1{font-size:20px;margin-bottom:16px}
   input{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;margin-bottom:12px;box-sizing:border-box}
   button{padding:10px 16px;border-radius:10px;border:none;background:linear-gradient(90deg,#ff2d78,#ff7a2d);color:#fff;font-weight:600;cursor:pointer}
-  .row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.1)}
-  .row button{background:#c0392b;padding:6px 12px;font-size:13px}
+  .row{padding:12px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+  .row-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .row-top b{font-size:15px}
+  .row-top button{background:#c0392b;padding:6px 12px;font-size:13px;flex-shrink:0}
+  .row small{color:#ff9ad6;display:block;margin-top:4px}
+  .row p{color:#cfc7da;margin:6px 0 0;font-size:14px;line-height:1.4}
   #msg{margin-top:10px;font-size:14px;color:#ffb3b3}
 </style>
 </head>
@@ -27,24 +31,41 @@
 <script>
 let PASSWORD='';
 const gate=document.getElementById('gate'), panel=document.getElementById('panel'), list=document.getElementById('list'), msg=document.getElementById('msg');
+
 document.getElementById('unlock').onclick=async()=>{
   PASSWORD=document.getElementById('pw').value;
-  await loadNames();
+  const ok=await loadNames();
+  if(ok){ gate.style.display='none'; panel.style.display='block'; }
 };
+
 async function loadNames(){
   try{
-    const res=await fetch('/.netlify/functions/names');
-    const names=await res.json();
-    renderList(names);
-    gate.style.display='none';
-    panel.style.display='block';
-  }catch(e){ msg.textContent='Could not load names.'; }
+    const res=await fetch('/.netlify/functions/names?password='+encodeURIComponent(PASSWORD),{cache:'no-store'});
+    const records=await res.json();
+    renderList(records);
+    msg.textContent='';
+    return true;
+  }catch(e){
+    msg.textContent='Could not load names.';
+    return false;
+  }
 }
-function renderList(names){
-  if(!names.length){ list.innerHTML='<p>No names yet.</p>'; return; }
-  list.innerHTML=names.map(n=>`<div class="row"><span>${escapeHtml(n)}</span><button data-name="${escapeHtml(n)}">Delete</button></div>`).join('');
+
+function renderList(records){
+  if(!records.length){ list.innerHTML='<p>No names yet.</p>'; return; }
+  list.innerHTML=records.map(r=>`
+    <div class="row">
+      <div class="row-top">
+        <b>${escapeHtml(r.name)}</b>
+        <button data-name="${escapeHtml(r.name)}">Delete</button>
+      </div>
+      ${r.phone?`<small>📞 ${escapeHtml(r.phone)}</small>`:''}
+      ${r.thought?`<p>${escapeHtml(r.thought)}</p>`:''}
+    </div>
+  `).join('');
   list.querySelectorAll('button[data-name]').forEach(b=>b.onclick=()=>deleteName(b.dataset.name));
 }
+
 async function deleteName(name){
   const res=await fetch('/.netlify/functions/names',{
     method:'DELETE',
@@ -55,7 +76,11 @@ async function deleteName(name){
   if(!res.ok){ alert('Could not delete.'); return; }
   renderList(await res.json());
 }
+
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+
+// keep the admin list live too, every 5 seconds
+setInterval(()=>{ if(PASSWORD && panel.style.display==='block') loadNames(); }, 5000);
 </script>
 </body>
 </html>
