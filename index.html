@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Freshers' Night — Gurucharan University</title>
+<meta name="description" content="Freshers' Night — music, dance, memories, registration, reels and after-party uploads.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+
+</head>
+<body>
+<div class="noise"></div><div class="cursor" id="cursor"></div><div class="progress"><i id="progress"></i></div>
+<header class="header"><nav class="nav"><a href="#home" class="brand"><span class="brand-mark">FN</span><span>Freshers' Night</span></a><div class="navlinks" id="navlinks"><a href="#event">Event</a><a href="#memories">Memories</a><a href="#coming">Coming</a><a href="#dance">Dance Battle</a><a href="#register">Register</a><a href="#reels">Reels</a><a href="#social">Followers</a></div><a class="navcta magnetic" href="#register">Register now</a><button class="menu" id="menu">☰</button></nav></header>
+
+
+
+<!-- Official event poster: replace the placeholder inside .poster-frame with your final poster image. -->
+<section class="poster-stage" aria-label="Official Freshers' Night poster">
+  <div class="poster-wrap">
+    <div class="poster-frame">
+      <span class="poster-badge">OFFICIAL POSTER</span>
+      <div class="poster-placeholder">
+        <div class="poster-kicker">Gurucharan University · Welcome Committee</div>
+        <h2>FRESHERS'<br>NIGHT</h2>
+        <p>YOUR OFFICIAL EVENT POSTER GOES HERE</p>
+      </div>
+    </div>
+    <div class="poster-note">Replace this poster area with the final official poster</div>
+  </div>
+</section>
+
+<div class="live-counts" aria-label="Live event counters">
+  <div class="live-count"><strong id="countNames">0</strong><span>NAMES JOINED</span></div>
+  <div class="live-count"><strong id="countReels">0</strong><span>REELS POSTED</span></div>
+  <div class="live-count"><strong id="countMemories">6</strong><span>MEMORIES</span></div>
+</div>
+<main>
+<section class="hero" id="home"><div class="hero-bg"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div><div class="container hero-inner reveal"><p class="script">A new beginning ✦</p><p class="eyebrow">Hosted by the Gurucharan University Welcome Committee</p><h1>FRESHERS'<span class="line2">NIGHT</span></h1><p class="hero-copy">Music, dance floors, silly games and a hundred new friends. The seniors are throwing the doors open — <strong>come find your people.</strong></p><div class="meta"><span class="pill">EVENT DATE</span><span class="pill">VENUE</span><span class="pill">WELCOME NIGHT</span></div><div class="hero-actions"><a class="btn magnetic" href="#register">Get your pass ↗</a><a class="btn ghost" href="#memories">See memories</a></div></div><div class="hero-word">new faces · new stories · one night</div></section>
+<div class="marquee"><div class="track">✦ NEW BATCH ✦ NEW BEGINNINGS ✦ ONE UNFORGETTABLE NIGHT ✦ FRESHERS' NIGHT ✦ NEW BATCH ✦ NEW BEGINNINGS ✦ ONE UNFORGETTABLE NIGHT ✦ FRESHERS' NIGHT ✦</div></div>
+<section class="section" id="event"><div class="container"><div class="section-head reveal"><div><p class="script">what to expect</p><h2>The night starts <em>here.</em></h2></div><p>One night to shake off the orientation-week nerves. Live music, a DJ set, a dance battle, quick-fire games and a surprise performance from the seniors.</p></div><div class="feature-grid"><article class="feature reveal"><span class="num">01</span><h3>Live Music</h3><p>Live performances and a soundtrack for your first big night.</p><b>06:00 PM</b></article><article class="feature reveal delay1"><span class="num">02</span><h3>Dance Battle</h3><p>Solo, duo and crew performers — step in, own the floor and register before slots close.</p><b>ENTRIES OPEN</b></article><article class="feature reveal delay2"><span class="num">03</span><h3>Games + Surprises</h3><p>Quick-fire games, crowd moments and a surprise performance from the seniors.</p><b>ALL NIGHT</b></article><article class="feature wide reveal delay3"><span class="num">04</span><h3>After Party</h3><p>Because the best part of the night usually happens after the official programme. Upload the moments and build the after-movie archive.</p><b>MEMORIES →</b></article></div></div></section>
+<section class="section alt" id="memories"><div class="container"><div class="section-head reveal"><div><p class="script">from the archive</p><h2>Last year's <em>memories.</em></h2></div><p>Swipe through the archive — these animated tiles are ready to be replaced with your actual photos and videos.</p></div><div class="gallery-shell reveal"><div class="gallery-track" id="gallery"><div class="memory"><span class="memory-tag">PHOTO</span><span class="memory-label">Photo 01</span></div><div class="memory"><span class="memory-tag">PHOTO</span><span class="memory-label">Photo 02</span></div><div class="memory"><span class="memory-tag">VIDEO</span><span class="memory-label">Video highlights ▶</span></div><div class="memory"><span class="memory-tag">PHOTO</span><span class="memory-label">Photo 03</span></div><div class="memory"><span class="memory-tag">PHOTO</span><span class="memory-label">Photo 04</span></div><div class="memory"><span class="memory-tag">PHOTO</span><span class="memory-label">Photo 05</span></div></div><div class="slider-controls"><button class="circle-btn" id="prev">‹</button><button class="circle-btn" id="next">›</button></div></div></div></section>
+
+<section class="section dark" id="coming"><div class="container">
+  <div class="section-head reveal">
+    <div><p class="script">write your name</p><h2>Who's <em>coming?</em></h2></div>
+    <p>Drop your details below and your name will appear in the list.</p>
+  </div>
+  <div class="panel reveal coming-card">
+    <form class="form" id="nameForm">
+      <div class="form-grid">
+        <label>YOUR NAME<input id="visitorName" name="name" required maxlength="40" autocomplete="name" placeholder="Write your name"></label>
+        <label>NUMBER<input id="visitorPhone" name="phone" maxlength="15" autocomplete="tel" inputmode="tel" placeholder="+91"></label>
+        <label class="full">WHAT YOU THINK ABOUT FRESHERS' NIGHT<textarea id="visitorThought" name="thought" maxlength="180" placeholder="Write something about the night..."></textarea></label>
+      </div>
+      <button class="btn form-submit" type="submit">Add my name ↗</button>
+    </form>
+    <div id="nameList" class="name-list" aria-live="polite"></div>
+  </div>
+</div></section>
+<section class="section dance" id="dance"><div class="dance-bg"></div><div class="container">
+  <div class="dance-content reveal">
+  <span class="pill">✦ The wait is on</span>
+  <p class="script">counting down to the night</p>
+  <h2>THE NIGHT <span>BEGINS.</span></h2>
+  <p>Every second brings us closer — watch the countdown and get ready for an unforgettable Freshers’ Night.</p>
+</div>
+  <div class="dance-showcase reveal delay1 event-countdown">
+  <div class="dance-light"></div>
+  <div class="countdown-wrap">
+    <p class="eyebrow">COUNTDOWN TO FRESHERS' NIGHT</p>
+    <div class="countdown-grid">
+      <div class="count-box"><b id="cdDays">00</b><span>DAYS</span></div>
+      <div class="count-box"><b id="cdHours">00</b><span>HOURS</span></div>
+      <div class="count-box"><b id="cdMinutes">00</b><span>MINUTES</span></div>
+      <div class="count-box"><b id="cdSeconds">00</b><span>SECONDS</span></div>
+    </div>
+    <p class="countdown-status" id="countdownStatus">The floor is waiting.</p>
+  </div>
+</div>
+</div></section>
+<section class="section dark" id="register"><div class="container"><div class="section-head reveal"><div><p class="script">your ticket to the night</p><h2>Reserve your <em>spot.</em></h2></div><p>Two quick steps — fill the form, then pay the entry fee. Confirmation can be handled by WhatsApp or email.</p></div><div class="register-layout"><div class="panel reveal register-info">
+  <div class="panel-top"><span>REGISTRATION</span><span>ENTRY PASS</span></div>
+  <div class="register-only">
+    <p class="script">ready?</p>
+    <h3>Scan. Register. <span>Show up.</span></h3>
+    <p class="register-note">Use the QR code or the button below to open the registration form.</p>
+  </div>
+</div><aside class="panel reveal delay1 register-qr-panel">
+  <p class="eyebrow">SECURE YOUR ENTRY</p>
+  <h3>Register</h3>
+  <a class="qr-link" id="googleFormQr" href="https://forms.google.com/" target="_blank" rel="noopener" aria-label="Open registration Google Form">
+    <div class="qr-link-fallback">GOOGLE FORM<br>QR</div>
+  </a>
+  <div class="register-cta">Scan or tap the QR to <b>register</b></div>
+  <a class="btn register-button" id="registerButton" href="https://forms.google.com/" target="_blank" rel="noopener">Register ↗</a>
+</aside></div></div></section>
+<section class="section reels" id="reels"><div class="container"><div class="section-head reveal"><div><p class="script">make it move</p><h2>Reels <em>+</em> after party.</h2></div><p>Fifteen seconds, thirty seconds, whatever you shot on the dance floor — drop it below and it goes straight into the after-movie pile.<br><span class="reel-counter-note">Reels posted from this browser: <b id="reelSectionCount">0</b></span>
+<button class="reel-more-btn" id="reelMoreBtn" type="button" aria-label="Show all reels" aria-expanded="false">⋯</button></p></div><div class="reel-hero"><div class="reel-copy reveal"><span class="eyebrow">15 SEC / 30 SEC / ANY MOMENT</span><h3>GOT A<br><span>REEL?</span></h3><p>Upload vertical moments from the night. The real project can route these files to an organiser review queue.</p></div><label class="reel-upload reveal delay1"><input id="reelFiles" type="file" accept="video/mp4,video/quicktime" multiple><div><span class="ring">↗</span><b>UPLOAD YOUR REEL</b><small>MP4 / MOV · choose from your phone</small></div></label></div><div class="reel-list" id="reelList"></div><div class="afterparty reveal">
+  <div>
+    <p class="eyebrow">FULL FOOTAGE</p>
+    <h3>After-party archive</h3>
+    <p style="color:var(--muted);margin:8px 0 0">Longer clips, speeches, dance rounds and the chaos after midnight.</p>
+    <p class="reel-counter-note" style="margin-top:10px">After-party videos: <b id="afterSectionCount">0</b></p>
+  </div>
+  <label class="btn ghost"><input id="afterFiles" type="file" accept="video/mp4,video/quicktime" multiple style="display:none">＋ Add videos</label>
+</div>
+<div class="reel-list" id="afterList"></div></div></section>
+<section class="section social" id="social"><div class="container"><div class="social-card reveal"><div><p class="script">stay in the loop</p><h2>Follow the <em>energy.</em></h2><p style="color:var(--muted);font-size:17px;line-height:1.7">Event updates, rehearsal clips, winner announcements and the best crowd moments.</p></div><div class="followers"><small>FOLLOWERS</small><strong id="igFollowers">—</strong><a class="btn" href="https://www.instagram.com/abhijit_kb/" target="_blank" rel="noopener">Follow @abhijit_kb ↗</a></div></div></div></section>
+<section class="section dark" id="programme"><div class="container"><div class="section-head reveal"><div><p class="script">the programme</p><h2>One night.<br><em>Four chapters.</em></h2></div></div><div class="timeline"><div class="time reveal"><b>06:00</b><div><h3>Doors open</h3><p>Registration, meet & greet and photo wall.</p></div></div><div class="time reveal"><b>06:45</b><div><h3>Stage begins</h3><p>Music, welcome and opening performances.</p></div></div><div class="time reveal"><b>08:00</b><div><h3>Dance Battle</h3><p>Performers take over the floor.</p></div></div><div class="time reveal"><b>09:30+</b><div><h3>After Party</h3><p>DJ set, games, reels and final memories.</p></div></div></div></div></section>
+<section class="section" id="team"><div class="container"><div class="section-head reveal"><div><p class="script">the people</p><h2>Built by the <em>crew.</em></h2></div><p>The volunteers making the night happen — follow them for behind-the-scenes drops and event updates.</p></div><div class="team-grid"><div class="person reveal"><div class="avatar"></div><b>Volunteer Name</b><small>Event Lead</small></div><div class="person reveal delay1"><div class="avatar"></div><b>Volunteer Name</b><small>Logistics</small></div><div class="person reveal delay2"><div class="avatar"></div><b>Volunteer Name</b><small>Media & Design</small></div><div class="person reveal delay3"><div class="avatar"></div><b>Volunteer Name</b><small>Hospitality</small></div></div></div></section>
+<section class="section dark" id="faq"><div class="container faq"><div class="section-head reveal"><div><p class="script">quick answers</p><h2>Before you <em>arrive.</em></h2></div></div><details class="reveal"><summary>How do I register? <span>＋</span></summary><p>Use the registration section and scan or tap the QR to open the Google Form.</p></details><details class="reveal"><summary>Can I upload a reel after the event? <span>＋</span></summary><p>Yes. The reel and after-party upload areas are designed for event footage and organiser review.</p></details><details class="reveal"><summary>Where will my submission go? <span>＋</span></summary><p>In the working project, forms and media can be sent to a backend for organiser review and moderation.</p></details></div></section>
+</main>
+<footer class="footer"><div class="container footer-inner">
+  <div><div class="brand"><span class="brand-mark">FN</span><span>Freshers' Night</span></div><p>New faces · new stories · one unforgettable night.</p></div>
+  <div class="footer-links"><a href="#register">Register</a><a href="#memories">Memories</a><a href="#reels">Reels</a><a href="#social">Followers</a><a href="#faq">FAQ</a></div>
+  <div class="creator-footer">
+    <div class="creator-avatar" id="creatorAvatar">WEB<br>DESIGN</div>
+    <div class="creator-copy"><small>Designed & developed by</small><b id="creatorName">YOUR NAME</b><p>Web Design · UI · Motion · Event Experience</p></div>
+  </div>
+  <p style="margin-top:28px;font-size:11px;color:#756d7d">© 2026 Freshers' Night · Built for the night, designed for the memories.</p>
+</div></footer>
+<div class="mobilebar"><a href="#register">Register</a><a href="#social">Followers</a></div>
+<script src="script.js"></script>
+<div id="toast"></div>
+</body>
+</html>
