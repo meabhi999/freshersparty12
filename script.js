@@ -72,33 +72,53 @@ const stopAfterDrag=()=>{afterDown=false;afterList.classList.remove('dragging')}
 afterList?.addEventListener('pointerup',stopAfterDrag);
 afterList?.addEventListener('pointercancel',stopAfterDrag);
 
-// attendee names — save details locally, but display only names publicly
+// attendee names — shared across everyone via a Netlify Function + Netlify Blobs (not local-only anymore)
 const nameForm=$('#nameForm'), nameInput=$('#visitorName'), phoneInput=$('#visitorPhone'), thoughtInput=$('#visitorThought'), nameList=$('#nameList');
+const countNamesEl=$('#countNames');
+const NAMES_ENDPOINT='/.netlify/functions/names';
 
 function animateCounter(el,target){
   const start=Number(el.textContent)||0, end=Number(target)||0, duration=850, t0=performance.now();
   function tick(t){const p=Math.min(1,(t-t0)/duration),e=1-Math.pow(1-p,3);el.textContent=Math.round(start+(end-start)*e);if(p<1)requestAnimationFrame(tick)}
   requestAnimationFrame(tick);
 }
-const storedNames=()=>{try{return JSON.parse(localStorage.getItem('freshers_names')||'[]')}catch{return[]}};
-const saveNames=a=>{try{localStorage.setItem('freshers_names',JSON.stringify(a))}catch{}};
 function cleanName(n){return String(n).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function renderNames(){
-  const names=storedNames();
-  nameList.innerHTML=names.length?names.map(n=>`<span class="name-chip">${cleanName(n)}</span>`).join(''):'';
+function renderNames(names){
+  nameList.innerHTML=names.length?names.map(n=>`<span class="name-chip">${cleanName(n)}</span>`).join(''):'<div class="name-empty">Be the first to add your name ✦</div>';
+  if(countNamesEl) animateCounter(countNamesEl,names.length);
 }
-nameForm?.addEventListener('submit',e=>{
+async function loadNames(){
+  try{
+    const res=await fetch(NAMES_ENDPOINT);
+    if(!res.ok) throw new Error('load failed');
+    renderNames(await res.json());
+  }catch(e){
+    nameList.innerHTML='<div class="name-empty">Could not load names right now — refresh and try again.</div>';
+  }
+}
+nameForm?.addEventListener('submit', async e=>{
   e.preventDefault();
   const n=nameInput.value.trim().replace(/\s+/g,' ');
   if(!n)return;
-  const names=storedNames();
-  if(!names.some(x=>x.toLowerCase()===n.toLowerCase())) names.push(n);
-  saveNames(names);
-  renderNames();
-  nameForm.reset();
-  toast('Name added ✓');
+  const submitBtn=nameForm.querySelector('.form-submit');
+  if(submitBtn) submitBtn.disabled=true;
+  try{
+    const res=await fetch(NAMES_ENDPOINT,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({name:n})
+    });
+    if(!res.ok) throw new Error('save failed');
+    renderNames(await res.json());
+    nameForm.reset();
+    toast('Name added ✓');
+  }catch(e){
+    toast('Could not add name — try again');
+  }finally{
+    if(submitBtn) submitBtn.disabled=false;
+  }
 });
-renderNames();
+loadNames();
 
 
 // Local reel previews: every selected reel becomes a large side-by-side playable card.
@@ -205,3 +225,4 @@ async function loadInstagramStats(){
 }
 loadInstagramStats();
 setInterval(loadInstagramStats,30000);
+
