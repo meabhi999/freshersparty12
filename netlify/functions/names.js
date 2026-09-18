@@ -18,9 +18,7 @@ exports.handler = async (event) => {
       name = (body.name || '').toString().trim().replace(/\s+/g, ' ').slice(0, 40);
     } catch (e) {}
 
-    if (!name) {
-      return json(400, { error: 'Name is required' });
-    }
+    if (!name) return json(400, { error: 'Name is required' });
 
     const names = await readNames(store);
     const alreadyThere = names.some((n) => n.toLowerCase() === name.toLowerCase());
@@ -29,6 +27,24 @@ exports.handler = async (event) => {
       if (names.length > MAX_NAMES) names.shift();
       await store.set('names', JSON.stringify(names));
     }
+    return json(200, names);
+  }
+
+  if (event.httpMethod === 'DELETE') {
+    let name = '', password = '';
+    try {
+      const body = JSON.parse(event.body || '{}');
+      name = (body.name || '').toString().trim();
+      password = (body.password || '').toString();
+    } catch (e) {}
+
+    if (!process.env.ADMIN_PASSWORD || password !== process.env.ADMIN_PASSWORD) {
+      return json(401, { error: 'Wrong password' });
+    }
+
+    let names = await readNames(store);
+    names = names.filter((n) => n.toLowerCase() !== name.toLowerCase());
+    await store.set('names', JSON.stringify(names));
     return json(200, names);
   }
 
