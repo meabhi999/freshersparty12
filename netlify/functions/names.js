@@ -7,27 +7,32 @@ exports.handler = async (event) => {
   const store = getStore('freshers-night');
 
   if (event.httpMethod === 'GET') {
-    const names = await readNames(store);
-    return json(200, names);
+    const records = await readRecords(store);
+    const qs = event.queryStringParameters || {};
+    const isAdmin = process.env.ADMIN_PASSWORD && qs.password === process.env.ADMIN_PASSWORD;
+    const data = isAdmin ? records : records.map((r) => ({ name: r.name }));
+    return json(200, data);
   }
 
   if (event.httpMethod === 'POST') {
-    let name = '';
+    let name = '', phone = '', thought = '';
     try {
       const body = JSON.parse(event.body || '{}');
       name = (body.name || '').toString().trim().replace(/\s+/g, ' ').slice(0, 40);
+      phone = (body.phone || '').toString().trim().slice(0, 20);
+      thought = (body.thought || '').toString().trim().slice(0, 200);
     } catch (e) {}
 
     if (!name) return json(400, { error: 'Name is required' });
 
-    const names = await readNames(store);
-    const alreadyThere = names.some((n) => n.toLowerCase() === name.toLowerCase());
+    const records = await readRecords(store);
+    const alreadyThere = records.some((r) => r.name.toLowerCase() === name.toLowerCase());
     if (!alreadyThere) {
-      names.push(name);
-      if (names.length > MAX_NAMES) names.shift();
-      await store.set('names', JSON.stringify(names));
+      records.push({ name, phone, thought, time: Date.now() });
+      if (records.length > MAX_NAMES) records.shift();
+      await store.set('names', JSON.stringify(records));
     }
-    return json(200, names);
+    return json(200, records.map((r) => ({ name: r.name })));
   }
 
   if (event.httpMethod === 'DELETE') {
@@ -42,19 +47,20 @@ exports.handler = async (event) => {
       return json(401, { error: 'Wrong password' });
     }
 
-    let names = await readNames(store);
-    names = names.filter((n) => n.toLowerCase() !== name.toLowerCase());
-    await store.set('names', JSON.stringify(names));
-    return json(200, names);
+    let records = await readRecords(store);
+    records = records.filter((r) => r.name.toLowerCase() !== name.toLowerCase());
+    await store.set('names', JSON.stringify(records));
+    return json(200, records);
   }
 
   return { statusCode: 405, body: 'Method not allowed' };
 };
 
-async function readNames(store) {
+async function readRecords(store) {
   const raw = await store.get('names');
   try {
-    return raw ? JSON.parse(raw) : [];
+    const data = raw ? JSON.parse(raw) : [];
+    return data.map((r) => (typeof r === 'string' ? { name: r, phone: '', thought: '', time: 0 } : r));
   } catch {
     return [];
   }
@@ -63,7 +69,7 @@ async function readNames(store) {
 function json(statusCode, data) {
   return {
     statusCode,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' },
     body: JSON.stringify(data),
   };
 }
