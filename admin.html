@@ -40,7 +40,7 @@ document.getElementById('unlock').onclick=async()=>{
 
 async function loadNames(){
   try{
-    const res=await fetch('/.netlify/functions/names?password='+encodeURIComponent(PASSWORD),{cache:'no-store'});
+    const res=await fetch('/names?password='+encodeURIComponent(PASSWORD),{cache:'no-store'});
     const records=await res.json();
     renderList(records);
     msg.textContent='';
@@ -67,7 +67,7 @@ function renderList(records){
 }
 
 async function deleteName(name){
-  const res=await fetch('/.netlify/functions/names',{
+  const res=await fetch('/names',{
     method:'DELETE',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({name,password:PASSWORD})
