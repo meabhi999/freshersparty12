@@ -1,86 +1,144 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Manage Names</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="robots" content="noindex">
+<title>Admin — Freshers' Night</title>
 <style>
-  body{background:#0f0a18;color:#fff;font-family:system-ui,sans-serif;padding:24px;max-width:560px;margin:0 auto}
-  h1{font-size:20px;margin-bottom:16px}
-  input{width:100%;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.06);color:#fff;margin-bottom:12px;box-sizing:border-box}
-  button{padding:10px 16px;border-radius:10px;border:none;background:linear-gradient(90deg,#ff2d78,#ff7a2d);color:#fff;font-weight:600;cursor:pointer}
-  .row{padding:12px 0;border-bottom:1px solid rgba(255,255,255,.1)}
-  .row-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
-  .row-top b{font-size:15px}
-  .row-top button{background:#c0392b;padding:6px 12px;font-size:13px;flex-shrink:0}
-  .row small{color:#ff9ad6;display:block;margin-top:4px}
-  .row p{color:#cfc7da;margin:6px 0 0;font-size:14px;line-height:1.4}
-  #msg{margin-top:10px;font-size:14px;color:#ffb3b3}
+*{box-sizing:border-box}
+body{margin:0;background:#090711;color:#f8f5f1;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:20px}
+h1{margin:0 0 16px;font-size:24px}
+.card{max-width:1100px;margin:0 auto}
+input,button{font:inherit;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:#171026;color:#fff;padding:12px 14px}
+button{cursor:pointer;background:#ff2f92;border-color:transparent;font-weight:700}
+button.ghost{background:transparent;border-color:rgba(255,255,255,.25)}
+button.del{background:transparent;border-color:#ff5a7a;color:#ff5a7a;padding:6px 10px}
+.row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.row input{flex:1;min-width:180px}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.stat{padding:10px 14px;border:1px solid rgba(255,255,255,.15);border-radius:12px;background:rgba(255,255,255,.05)}
+.stat b{font-size:20px;margin-right:6px}
+.wrap{overflow-x:auto;border:1px solid rgba(255,255,255,.12);border-radius:14px}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th,td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08);vertical-align:top;font-size:14px}
+th{color:#b7afbd;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
+.msg{color:#ff8fb5;min-height:22px;margin:8px 0}
+.hide{display:none}
 </style>
 </head>
 <body>
-<h1>Manage attendee names</h1>
-<div id="gate">
-  <input id="pw" type="password" placeholder="Admin password">
-  <button id="unlock">Unlock</button>
-  <div id="msg"></div>
-</div>
-<div id="panel" style="display:none">
-  <div id="list">Loading…</div>
-</div>
-<script>
-let PASSWORD='';
-const gate=document.getElementById('gate'), panel=document.getElementById('panel'), list=document.getElementById('list'), msg=document.getElementById('msg');
+<div class="card">
+  <h1>Freshers' Night — Registrations</h1>
 
-document.getElementById('unlock').onclick=async()=>{
-  PASSWORD=document.getElementById('pw').value;
-  const ok=await loadNames();
-  if(ok){ gate.style.display='none'; panel.style.display='block'; }
-};
-
-async function loadNames(){
-  try{
-    const res=await fetch('/names?password='+encodeURIComponent(PASSWORD),{cache:'no-store'});
-    const records=await res.json();
-    renderList(records);
-    msg.textContent='';
-    return true;
-  }catch(e){
-    msg.textContent='Could not load names.';
-    return false;
-  }
-}
-
-function renderList(records){
-  if(!records.length){ list.innerHTML='<p>No names yet.</p>'; return; }
-  list.innerHTML=records.map(r=>`
+  <div id="login">
     <div class="row">
-      <div class="row-top">
-        <b>${escapeHtml(r.name)}</b>
-        <button data-name="${escapeHtml(r.name)}">Delete</button>
-      </div>
-      ${r.phone?`<small>📞 ${escapeHtml(r.phone)}</small>`:''}
-      ${r.thought?`<p>${escapeHtml(r.thought)}</p>`:''}
+      <input id="pw" type="password" placeholder="Admin password" autocomplete="current-password">
+      <button id="loginBtn">Open</button>
     </div>
-  `).join('');
-  list.querySelectorAll('button[data-name]').forEach(b=>b.onclick=()=>deleteName(b.dataset.name));
+  </div>
+  <div class="msg" id="msg"></div>
+
+  <div id="panel" class="hide">
+    <div class="stats" id="stats"></div>
+    <div class="row">
+      <input id="search" placeholder="Search name, phone or thought">
+      <button class="ghost" id="refresh">Refresh</button>
+      <button id="csv">Download CSV</button>
+    </div>
+    <div class="wrap">
+      <table>
+        <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Participate</th><th>Thought</th><th>Time</th><th></th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+const $ = (s) => document.querySelector(s);
+let password = '';
+let records = [];
+
+function setMsg(t){ $('#msg').textContent = t || ''; }
+
+async function load(){
+  setMsg('');
+  const res = await fetch('/names', { headers: { 'x-admin-password': password }, cache: 'no-store' });
+  if (res.status === 401) { setMsg('Wrong password'); return false; }
+  if (!res.ok) { setMsg('Could not load. Try again.'); return false; }
+  records = await res.json();
+  $('#login').classList.add('hide');
+  $('#panel').classList.remove('hide');
+  render();
+  return true;
 }
 
-async function deleteName(name){
-  const res=await fetch('/names',{
-    method:'DELETE',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({name,password:PASSWORD})
+function render(){
+  const q = $('#search').value.trim().toLowerCase();
+  const list = records.filter(r => !q || [r.name, r.phone, r.thought].join(' ').toLowerCase().includes(q));
+  const count = (c) => records.filter(r => (r.participate || []).includes(c)).length;
+  $('#stats').innerHTML = '';
+  [['Total', records.length], ['Dance', count('Dance')], ['Music', count('Music')], ['Extra', count('Extra')]].forEach(([k, v]) => {
+    const d = document.createElement('div'); d.className = 'stat';
+    d.innerHTML = '<b>' + v + '</b>' + k; $('#stats').appendChild(d);
   });
-  if(res.status===401){ alert('Wrong password.'); gate.style.display='block'; panel.style.display='none'; return; }
-  if(!res.ok){ alert('Could not delete.'); return; }
-  renderList(await res.json());
+  const tb = $('#rows'); tb.innerHTML = '';
+  list.forEach((r, i) => {
+    const tr = document.createElement('tr');
+    [i + 1, r.name, r.phone, (r.participate || []).join(', '), r.thought, r.time ? new Date(r.time).toLocaleString('en-IN') : ''].forEach(v => {
+      const td = document.createElement('td'); td.textContent = v; tr.appendChild(td);
+    });
+    const td = document.createElement('td');
+    const b = document.createElement('button'); b.className = 'del'; b.textContent = 'Delete';
+    b.onclick = () => remove(r);
+    td.appendChild(b); tr.appendChild(td); tb.appendChild(tr);
+  });
 }
 
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+async function remove(r){
+  if (!confirm('Delete ' + r.name + '?')) return;
+  const res = await fetch('/names', {
+    method: 'DELETE',
+    headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+    body: JSON.stringify({ id: r.id })
+  });
+  if (res.ok) { records = records.filter(x => x.id !== r.id); render(); } else setMsg('Could not delete.');
+}
 
-// keep the admin list live too, every 5 seconds
-setInterval(()=>{ if(PASSWORD && panel.style.display==='block') loadNames(); }, 5000);
+function csvCell(v, guard){
+  let s = String(v == null ? '' : v);
+  if (guard && /^[=+\-@]/.test(s)) s = "'" + s;
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+
+function downloadCsv(){
+  const head = ['Name', 'Phone', 'Participate', 'Thought', 'Time'];
+  const lines = [head.map(h => csvCell(h)).join(',')];
+  records.forEach(r => lines.push([
+    csvCell(r.name, true), csvCell(r.phone), csvCell((r.participate || []).join(' + ')),
+    csvCell(r.thought, true), csvCell(r.time ? new Date(r.time).toLocaleString('en-IN') : '')
+  ].join(',')));
+  const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'freshers-registrations.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+$('#loginBtn').onclick = async () => {
+  password = $('#pw').value;
+  if (!password) return;
+  if (await load()) { try { sessionStorage.setItem('fn_admin', password); } catch (e) {} }
+};
+$('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#loginBtn').click(); });
+$('#refresh').onclick = load;
+$('#search').oninput = render;
+$('#csv').onclick = downloadCsv;
+
+try {
+  const saved = sessionStorage.getItem('fn_admin');
+  if (saved) { password = saved; load().then(ok => { if (!ok) sessionStorage.removeItem('fn_admin'); }); }
+} catch (e) {}
 </script>
 </body>
 </html>
