@@ -72,55 +72,56 @@ const stopAfterDrag=()=>{afterDown=false;afterList.classList.remove('dragging')}
 afterList?.addEventListener('pointerup',stopAfterDrag);
 afterList?.addEventListener('pointercancel',stopAfterDrag);
 
-// attendee names — synced live with the server so every phone sees the same list
-const nameForm=$('#nameForm'), nameInput=$('#visitorName'), phoneInput=$('#visitorPhone'), thoughtInput=$('#visitorThought'), nameList=$('#nameList'), countNamesEl=$('#countNames');
+// attendee names — saved on the server (Cloudflare KV); only names are shown publicly
+const nameForm=$('#nameForm'), nameInput=$('#visitorName'), phoneInput=$('#visitorPhone'), thoughtInput=$('#visitorThought'), nameList=$('#nameList');
 
 function animateCounter(el,target){
   const start=Number(el.textContent)||0, end=Number(target)||0, duration=850, t0=performance.now();
   function tick(t){const p=Math.min(1,(t-t0)/duration),e=1-Math.pow(1-p,3);el.textContent=Math.round(start+(end-start)*e);if(p<1)requestAnimationFrame(tick)}
   requestAnimationFrame(tick);
 }
+let publicNames=[];
+const countNamesEl=$('#countNames');
 function cleanName(n){return String(n).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function renderNames(names){
-  nameList.innerHTML=names.length?names.map(n=>`<span class="name-chip">${cleanName(n.name||n)}</span>`).join(''):'';
-  if(countNamesEl) animateCounter(countNamesEl,names.length);
+function renderNames(){
+  nameList.innerHTML=publicNames.map(n=>`<span class="name-chip">${cleanName(n)}</span>`).join('');
+  if(countNamesEl) animateCounter(countNamesEl,publicNames.length);
 }
-let lastNamesJSON='';
-async function fetchNames(){
+async function loadNames(){
   try{
-    const res=await fetch('/names',{cache:'no-store'})
-    if(!res.ok)return;
-    const names=await res.json();
-    const asJSON=JSON.stringify(names);
-    if(asJSON!==lastNamesJSON){lastNamesJSON=asJSON;renderNames(names);}
+    const res=await fetch('/names',{cache:'no-store'});
+    if(!res.ok) throw new Error('load failed');
+    const data=await res.json();
+    publicNames=data.map(r=>r.name);
+    renderNames();
   }catch(e){}
 }
 nameForm?.addEventListener('submit',async e=>{
   e.preventDefault();
-  const n=nameInput.value.trim().replace(/\s+/g,' ');
-  if(!n)return;
-  const submitBtn=nameForm.querySelector('.form-submit');
-  if(submitBtn)submitBtn.disabled=true;
+  const name=nameInput.value.trim().replace(/\s+/g,' ');
+  const phone=phoneInput.value.trim();
+  const thought=thoughtInput.value.trim();
+  const participate=[...nameForm.querySelectorAll('input[name="participate"]:checked')].map(i=>i.value);
+  if(!name) return;
+  if(phone.replace(/\D/g,'').length<10){toast('Enter a valid phone number');return}
+  if(!participate.length){toast('Pick at least one: Dance, Music or Extra');return}
+  const btn=nameForm.querySelector('button[type="submit"]');
+  btn.disabled=true;
   try{
-    const res=await fetch('/names',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({name:n,phone:phoneInput?.value.trim()||'',thought:thoughtInput?.value.trim()||''})
-    });
-    if(!res.ok){toast('Kuch gadbad ho gayi, dubara try karo');return;}
-    const names=await res.json();
-    lastNamesJSON=JSON.stringify(names);
-    renderNames(names);
+    const res=await fetch('/names',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,phone,participate,thought})});
+    const data=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(data.error||'Could not save. Try again.');
+    if(!publicNames.some(x=>x.toLowerCase()===name.toLowerCase())) publicNames.push(name);
+    renderNames();
     nameForm.reset();
-    toast('Name added ✓');
+    toast(data.updated?'Details updated ✓':'Name added ✓');
   }catch(err){
-    toast('Network error, dubara try karo');
+    toast(err.message||'Something went wrong. Try again.');
   }finally{
-    if(submitBtn)submitBtn.disabled=false;
+    btn.disabled=false;
   }
 });
-fetchNames();
-setInterval(fetchNames,4000);
+loadNames();
 
 
 // Local reel previews: every selected reel becomes a large side-by-side playable card.
