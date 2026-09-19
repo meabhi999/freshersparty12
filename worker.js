@@ -1,7 +1,9 @@
-// Cloudflare Worker — serves the static site AND handles the /names API,
-// replacing the old Netlify function / Pages function.
+// Cloudflare Worker — serves the static site AND handles the /names API.
+// Every registration is saved as its OWN KV entry ("reg:<id>"), so 200 students
+// registering at the same moment can never overwrite each other.
 
-const MAX_NAMES = 500;
+const MAX_REGISTRATIONS = 500;
+const CHOICES = ['Dance', 'Music', 'Extra'];
 
 export default {
   async fetch(request, env) {
@@ -17,63 +19,102 @@ export default {
 
 async function handleNames(request, env, url) {
   if (request.method === 'GET') {
-    const records = await readRecords(env);
-    const password = url.searchParams.get('password');
-    const isAdmin = env.ADMIN_PASSWORD && password === env.ADMIN_PASSWORD;
-    const data = isAdmin ? records : records.map((r) => ({ name: r.name }));
-    return json(200, data);
-  }
+    const supplied = request.headers.get('x-admin-password') || url.searchParams.get('password');
+    if (supplied && !passwordOk(env, supplied)) return json(401, { error: 'Wrong password' });
 
-  if (request.method === 'POST') {
-    let name = '', phone = '', thought = '';
-    try {
-      const body = await request.json();
-      name = (body.name || '').toString().trim().replace(/\s+/g, ' ').slice(0, 40);
-      phone = (body.phone || '').toString().trim().slice(0, 20);
-      thought = (body.thought || '').toString().trim().slice(0, 200);
-    } catch (e) {}
-
-    if (!name) return json(400, { error: 'Name is required' });
-
-    const records = await readRecords(env);
-    const alreadyThere = records.some((r) => r.name.toLowerCase() === name.toLowerCase());
-    if (!alreadyThere) {
-      records.push({ name, phone, thought, time: Date.now() });
-      if (records.length > MAX_NAMES) records.shift();
-      await env.NAMES_KV.put('names', JSON.stringify(records));
-    }
+    const records = await listAll(env);
+    if (supplied) return json(200, records);
     return json(200, records.map((r) => ({ name: r.name })));
   }
 
-  if (request.method === 'DELETE') {
-    let name = '', password = '';
-    try {
-      const body = await request.json();
-      name = (body.name || '').toString().trim();
-      password = (body.password || '').toString();
-    } catch (e) {}
+  if (request.method === 'POST') {
+    let body = {};
+    try { body = await request.json(); } catch (e) {}
 
-    if (!env.ADMIN_PASSWORD || password !== env.ADMIN_PASSWORD) {
-      return json(401, { error: 'Wrong password' });
+    const name = String(body.name || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+    const phone = String(body.phone || '').replace(/[^\d+]/g, '').slice(0, 15);
+    const thought = String(body.thought || '').trim().slice(0, 150);
+    const chosen = Array.isArray(body.participate) ? body.participate : [];
+    const participate = CHOICES.filter((c) => chosen.includes(c));
+
+    if (!name) return json(400, { error: 'Name is required' });
+    if (phone.replace(/\D/g, '').length < 10) return json(400, { error: 'Enter a valid phone number' });
+    if (!participate.length) return json(400, { error: 'Choose Dance, Music or Extra' });
+
+    // Same name + same phone = same person, so a double tap just updates the entry.
+    const id = 'reg:' + (await sha256(name.toLowerCase() + '|' + phone.replace(/\D/g, '')));
+
+    const existing = await env.NAMES_KV.list({ prefix: 'reg:', limit: MAX_REGISTRATIONS + 1 });
+    const already = existing.keys.some((k) => k.name === id);
+    if (!already && existing.keys.length >= MAX_REGISTRATIONS) {
+      return json(409, { error: 'Registrations are full' });
     }
 
-    let records = await readRecords(env);
-    records = records.filter((r) => r.name.toLowerCase() !== name.toLowerCase());
-    await env.NAMES_KV.put('names', JSON.stringify(records));
-    return json(200, records);
+    const time = Date.now();
+    const meta = fitMeta({ n: name, p: phone, a: participate, t: thought, ts: time });
+    await env.NAMES_KV.put(id, JSON.stringify({ name, phone, participate, thought, time }), { metadata: meta });
+    return json(200, { ok: true, updated: already });
+  }
+
+  if (request.method === 'DELETE') {
+    let body = {};
+    try { body = await request.json(); } catch (e) {}
+    const supplied = request.headers.get('x-admin-password') || body.password;
+    if (!passwordOk(env, supplied)) return json(401, { error: 'Wrong password' });
+
+    if (body.id && String(body.id).startsWith('reg:')) {
+      await env.NAMES_KV.delete(String(body.id));
+    } else if (body.name) {
+      const wanted = String(body.name).trim().toLowerCase();
+      const records = await listAll(env);
+      for (const r of records) {
+        if (r.name.toLowerCase() === wanted) await env.NAMES_KV.delete(r.id);
+      }
+    }
+    return json(200, { ok: true });
   }
 
   return new Response('Method not allowed', { status: 405 });
 }
 
-async function readRecords(env) {
-  const raw = await env.NAMES_KV.get('names');
-  try {
-    const data = raw ? JSON.parse(raw) : [];
-    return data.map((r) => (typeof r === 'string' ? { name: r, phone: '', thought: '', time: 0 } : r));
-  } catch {
-    return [];
+function passwordOk(env, supplied) {
+  return Boolean(env.ADMIN_PASSWORD) && String(supplied || '') === env.ADMIN_PASSWORD;
+}
+
+// One list call returns every registration (details live in KV "metadata").
+async function listAll(env) {
+  const out = [];
+  let cursor;
+  do {
+    const res = await env.NAMES_KV.list({ prefix: 'reg:', cursor, limit: 1000 });
+    for (const k of res.keys) {
+      const m = k.metadata || {};
+      out.push({
+        id: k.name,
+        name: m.n || '',
+        phone: m.p || '',
+        participate: m.a || [],
+        thought: m.t || '',
+        time: m.ts || 0,
+      });
+    }
+    cursor = res.list_complete ? undefined : res.cursor;
+  } while (cursor);
+  return out.sort((a, b) => a.time - b.time);
+}
+
+// KV metadata must stay under 1024 bytes; shorten the thought if needed.
+function fitMeta(meta) {
+  const size = (m) => new TextEncoder().encode(JSON.stringify(m)).length;
+  while (size(meta) > 1000 && meta.t.length > 0) {
+    meta.t = meta.t.slice(0, Math.floor(meta.t.length / 2));
   }
+  return meta;
+}
+
+async function sha256(text) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
+  return [...new Uint8Array(buf)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
 function json(statusCode, data) {
