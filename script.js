@@ -88,7 +88,7 @@ function renderNames(names){
 let lastNamesJSON='';
 async function fetchNames(){
   try{
-    const res=await fetch('/.netlify/functions/names',{cache:'no-store'});
+    const res=await fetch('/names',{cache:'no-store'})
     if(!res.ok)return;
     const names=await res.json();
     const asJSON=JSON.stringify(names);
@@ -102,7 +102,7 @@ nameForm?.addEventListener('submit',async e=>{
   const submitBtn=nameForm.querySelector('.form-submit');
   if(submitBtn)submitBtn.disabled=true;
   try{
-    const res=await fetch('/.netlify/functions/names',{
+    const res=await fetch('/names',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
       body:JSON.stringify({name:n,phone:phoneInput?.value.trim()||'',thought:thoughtInput?.value.trim()||''})
