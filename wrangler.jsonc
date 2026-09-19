@@ -1,0 +1,12 @@
+{
+  "name": "freshersparty12",
+  "compatibility_date": "2026-09-19",
+  "main": "worker.js",
+  "assets": {
+    "directory": "./",
+    "binding": "ASSETS"
+  },
+  "kv_namespaces": [
+    { "binding": "NAMES_KV", "id": "0ff784e281a64eed85f83a9e977d239f" }
+  ]
+}
