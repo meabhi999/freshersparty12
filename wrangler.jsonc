@@ -7,6 +7,6 @@
     "binding": "ASSETS"
   },
   "kv_namespaces": [
-    { "binding": "NAMES_KV", "id": "0ff784e281a64eed85f83a9e977d239f" }
+    { "binding": "NAMES_KV", "id": "0ff784e281a64eed85f83a8e977d239f" }
   ]
 }
