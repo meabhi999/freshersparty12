@@ -10,6 +10,16 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&family=Playfair+Display:ital,wght@1,600;1,700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 
+<style>
+.pick-group{border:0;padding:0;margin:0;min-width:0}
+.pick-group legend{padding:0;margin-bottom:10px;color:#cfc7d4;font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.pick-row{display:flex;flex-wrap:wrap;gap:10px}
+.form .pick{position:relative;display:block;gap:0;text-transform:none;letter-spacing:0;font-size:15px}
+.form .pick input{position:absolute;opacity:0;width:1px;height:1px;padding:0;border:0;pointer-events:none}
+.form .pick span{display:inline-block;padding:12px 22px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(255,255,255,.045);color:#fff;font-weight:600;cursor:pointer;transition:.2s}
+.form .pick input:checked+span{background:linear-gradient(100deg,var(--pink),var(--orange));border-color:transparent}
+.form .pick input:focus-visible+span{outline:2px solid var(--cyan);outline-offset:3px}
+</style>
 </head>
 <body>
 <div class="noise"></div><div class="cursor" id="cursor"></div><div class="progress"><i id="progress"></i></div>
@@ -52,8 +62,16 @@
     <form class="form" id="nameForm">
       <div class="form-grid">
         <label>YOUR NAME<input id="visitorName" name="name" required maxlength="40" autocomplete="name" placeholder="Write your name"></label>
-        <label>NUMBER<input id="visitorPhone" name="phone" maxlength="15" autocomplete="tel" inputmode="tel" placeholder="+91"></label>
-        <label class="full">WHAT YOU THINK ABOUT FRESHERS' NIGHT<textarea id="visitorThought" name="thought" maxlength="180" placeholder="Write something about the night..."></textarea></label>
+        <label>PHONE NUMBER<input id="visitorPhone" name="phone" type="tel" required maxlength="15" autocomplete="tel" inputmode="tel" placeholder="+91"></label>
+        <fieldset class="full pick-group">
+          <legend>WHAT WILL YOU PARTICIPATE IN? (pick one or more)</legend>
+          <div class="pick-row">
+            <label class="pick"><input type="checkbox" name="participate" value="Dance"><span>Dance</span></label>
+            <label class="pick"><input type="checkbox" name="participate" value="Music"><span>Music</span></label>
+            <label class="pick"><input type="checkbox" name="participate" value="Extra"><span>Extra</span></label>
+          </div>
+        </fieldset>
+        <label class="full">YOUR THOUGHT<textarea id="visitorThought" name="thought" maxlength="150" placeholder="Write something about the night..."></textarea></label>
       </div>
       <button class="btn form-submit" type="submit">Add my name ↗</button>
     </form>
@@ -125,5 +143,4 @@
 <div class="mobilebar"><a href="#register">Register</a><a href="#social">Followers</a></div>
 <script src="script.js"></script>
 <div id="toast"></div>
-</body>
-</html>
+</body></html>
