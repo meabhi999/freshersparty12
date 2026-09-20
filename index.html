@@ -11,6 +11,7 @@
 <link rel="stylesheet" href="style.css">
 
 <style>
+/* chips (radio / checkbox look) */
 .pick-group{border:0;padding:0;margin:0;min-width:0}
 .pick-group legend{padding:0;margin-bottom:10px;color:#cfc7d4;font-size:12px;text-transform:uppercase;letter-spacing:.08em;font-weight:700}
 .pick-row{display:flex;flex-wrap:wrap;gap:10px}
@@ -19,11 +20,118 @@
 .form .pick span{display:inline-block;padding:12px 22px;border:1px solid rgba(255,255,255,.14);border-radius:999px;background:rgba(255,255,255,.045);color:#fff;font-weight:600;cursor:pointer;transition:.2s}
 .form .pick input:checked+span{background:linear-gradient(100deg,var(--pink),var(--orange));border-color:transparent}
 .form .pick input:focus-visible+span{outline:2px solid var(--cyan);outline-offset:3px}
+.form [hidden]{display:none!important}
+.form select{appearance:none;-webkit-appearance:none}
+
+/* event info strip */
+.info-strip{padding:70px 0 0;position:relative}
+.info-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}
+.info-card{padding:26px;border:1px solid var(--line);border-radius:26px;background:linear-gradient(145deg,rgba(255,255,255,.07),rgba(255,255,255,.025));display:flex;flex-direction:column;gap:10px}
+.ico{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;color:var(--pink);flex:none}
+.info-card small{color:#9f96aa;font-size:11px;letter-spacing:.15em}
+.info-card b{font-family:Manrope;font-size:20px;line-height:1.25}
+
+/* participate card + grouped lists */
+.participate-card{max-width:980px;margin:0 auto 22px;text-align:center;padding:46px 30px;background:radial-gradient(circle at 50% 0,rgba(255,47,146,.16),transparent 60%),rgba(255,255,255,.04)}
+.participate-card h3{font-family:Manrope;font-size:clamp(32px,5vw,56px);line-height:1;margin:10px 0 24px;letter-spacing:-.03em}
+.perform-lists{max-width:980px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+.perform-col{padding:22px;border:1px solid var(--line);border-radius:24px;background:rgba(255,255,255,.035)}
+.perform-col h4{margin:0;font-family:Manrope;font-size:20px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.perform-col h4 span{min-width:32px;text-align:center;padding:4px 10px;border-radius:999px;background:linear-gradient(100deg,var(--pink),var(--orange));font-size:13px}
+.perform-col .name-list{margin-top:14px;min-height:0}
+.name-chip em{color:var(--muted);font-style:normal;font-size:12px}
+
+/* popup form */
+.modal{position:fixed;inset:0;z-index:500;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(4,3,9,.82);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.modal.open{display:flex}
+.modal-card{position:relative;width:min(660px,100%);max-height:calc(100vh - 36px);max-height:calc(100dvh - 36px);overflow:auto;padding:32px;border:1px solid var(--line);border-radius:28px;background:#100b1b;box-shadow:0 30px 100px #000a}
+.modal-card h3{font-family:Manrope;font-size:30px;margin:6px 0 22px;letter-spacing:-.02em}
+.modal-x{position:absolute;top:14px;right:14px;width:40px;height:40px;padding:0;border-radius:50%;border:1px solid var(--line);background:rgba(255,255,255,.06);color:#fff;font-size:22px;line-height:1;cursor:pointer}
+
+/* entry pass + venue */
+.fee-big{font-family:Space Grotesk;font-size:clamp(44px,6vw,72px);font-weight:700;line-height:1;margin:6px 0 4px;background:linear-gradient(100deg,var(--pink),var(--orange));-webkit-background-clip:text;background-clip:text;color:transparent}
+.steps{margin:14px 0 22px;padding-left:20px;color:var(--muted);line-height:1.8}
+.steps b{color:#fff}
+.pass-form{margin-top:6px}
+.pass-done{margin-top:18px;padding:16px 18px;border:1px solid rgba(25,216,207,.4);border-radius:16px;background:rgba(25,216,207,.08);color:#dffcf9;line-height:1.6}
+.upi-row{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;color:var(--muted);font-size:14px}
+.upi-row b{color:#fff;word-break:break-all}
+.copy-btn{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:#fff;font:inherit;font-size:13px;cursor:pointer}
+.venue-card{display:grid;grid-template-columns:1fr 1.1fr;gap:34px;align-items:stretch;padding:34px}
+.venue-info{display:flex;flex-direction:column;justify-content:center;gap:12px}
+.venue-info h3{font-family:Manrope;font-size:clamp(30px,4vw,46px);line-height:1.05;margin:0;letter-spacing:-.03em}
+.venue-info p{color:var(--muted);font-size:17px;line-height:1.7;margin:0 0 8px}
+.venue-info .btn{align-self:flex-start}
+.venue-map{min-height:280px;border-radius:22px;overflow:hidden;border:1px solid var(--line);background:radial-gradient(circle at 50% 45%,rgba(255,47,146,.25),transparent 60%),#150e24;display:grid;place-items:center}
+.venue-map iframe{width:100%;height:100%;min-height:280px;border:0;display:block}
+.venue-map .ico{width:64px;height:64px}
+
+/* instagram + footer contact */
+.ig-logo{width:54px;height:54px;display:block;margin:0 auto 10px}
+.footer-inner{flex-wrap:wrap}
+.footer-contact small{display:block;color:#9f96aa;letter-spacing:.15em;font-size:11px;margin-bottom:8px}
+.footer-contact a{display:block;color:#fff;font-weight:600;line-height:1.9}
+.faq p a{color:#fff;font-weight:600}
+
+@media(max-width:850px){
+  .info-grid{grid-template-columns:1fr 1fr}
+  .perform-lists{grid-template-columns:1fr}
+  .venue-card{grid-template-columns:1fr;padding:24px}
+  .register-qr-panel{order:-1}
+}
+@media(max-width:520px){
+  .info-card{padding:20px}.info-card b{font-size:17px}
+  .modal-card{padding:24px 20px}
+  .participate-card{padding:36px 20px}
+}
+
+/* ===== live stats strip — bolder / bigger ===== */
+.live-counts{gap:20px!important;padding:22px 16px!important}
+.live-count{padding:22px 26px!important;border:1px solid rgba(255,255,255,.16)!important;border-radius:22px!important;background:linear-gradient(150deg,rgba(255,47,146,.14),rgba(255,255,255,.04))!important;box-shadow:0 18px 50px -20px rgba(255,47,146,.45)}
+.live-count strong{font-size:clamp(30px,5vw,44px)!important;background:linear-gradient(100deg,var(--pink),var(--orange));-webkit-background-clip:text;background-clip:text;color:transparent}
+.live-count span{font-size:12px!important;letter-spacing:.14em!important;font-weight:700}
+
+/* ===== bigger headline sizing across the site ===== */
+.hero h1{font-size:clamp(64px,13vw,150px)!important}
+.section-head h2{font-size:clamp(34px,6vw,58px)!important}
+.participate-card h3{font-size:clamp(36px,6vw,64px)!important}
+.fee-big{font-size:clamp(56px,8vw,96px)!important}
+
+/* ===== inline participation form on the page (no popup) ===== */
+.inline-form-wrap{max-width:640px;margin:34px auto 0;text-align:left}
+.view-performers-btn{display:block;margin:26px auto 0}
+
+/* ===== performers modal list ===== */
+#participantsModal .perform-lists{grid-template-columns:1fr;gap:14px;max-width:100%}
+
+/* ===== countdown enhancement ===== */
+.countdown-grid{gap:14px!important}
+.count-box{position:relative;overflow:hidden;padding:22px 10px!important;border:1px solid rgba(255,47,146,.35)!important;background:linear-gradient(160deg,rgba(255,47,146,.16),rgba(255,255,255,.03))!important;box-shadow:0 0 0 1px rgba(255,255,255,.04) inset,0 20px 60px -25px rgba(255,47,146,.55)}
+.count-box b{font-size:clamp(34px,6vw,54px)!important;background:linear-gradient(100deg,var(--pink),var(--orange));-webkit-background-clip:text;background-clip:text;color:transparent}
+.countdown-sparkles{text-align:center;font-size:20px;letter-spacing:.4em;color:var(--pink);opacity:.85;margin-bottom:10px}
+
+/* ===== payment section: no-QR note card ===== */
+.payment-note{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:34px 22px;border:1px dashed rgba(255,47,146,.45);border-radius:22px;background:rgba(255,47,146,.06)}
+.payment-note .pay-ico{width:54px;height:54px;border-radius:16px;display:grid;place-items:center;background:linear-gradient(100deg,var(--pink),var(--orange));font-size:26px}
+.payment-note b{font-size:15px;letter-spacing:.02em}
+.big-register-wrap{margin-top:22px;text-align:center}
+.big-register-btn{width:100%;max-width:420px;padding:20px 26px;font-size:17px;border-radius:20px}
+
+/* ===== semester popup ===== */
+.sem-popup{position:fixed;inset:0;z-index:600;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(4,3,9,.82);backdrop-filter:blur(10px)}
+.sem-popup.open{display:flex}
+.sem-card{width:min(380px,100%);padding:28px 24px;border:1px solid var(--line);border-radius:24px;background:#100b1b;text-align:center}
+.sem-card h4{font-family:Manrope;font-size:22px;margin:0 0 6px}
+.sem-card p{color:var(--muted);font-size:14px;margin:0 0 20px}
+.sem-options{display:flex;flex-direction:column;gap:10px}
+.sem-options button{padding:14px 18px;border-radius:14px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:#fff;font:inherit;font-weight:700;cursor:pointer;transition:.2s}
+.sem-options button:hover{background:linear-gradient(100deg,var(--pink),var(--orange));border-color:transparent}
+.sem-close{margin-top:16px;background:none;border:0;color:var(--muted);font:inherit;cursor:pointer;text-decoration:underline}
 </style>
 </head>
 <body>
 <div class="noise"></div><div class="cursor" id="cursor"></div><div class="progress"><i id="progress"></i></div>
-<header class="header"><nav class="nav"><a href="#home" class="brand"><span class="brand-mark">FN</span><span>Freshers' Night</span></a><div class="navlinks" id="navlinks"><a href="#event">Event</a><a href="#memories">Memories</a><a href="#coming">Coming</a><a href="#dance">Dance Battle</a><a href="#register">Register</a><a href="#reels">Reels</a><a href="#social">Followers</a></div><a class="navcta magnetic" href="#register">Register now</a><button class="menu" id="menu">☰</button></nav></header>
+<header class="header"><nav class="nav"><a href="#home" class="brand"><span class="brand-mark">FN</span><span>Freshers' Night</span></a><div class="navlinks" id="navlinks"><a href="#event">Event</a><a href="#memories">Memories</a><a href="#coming">Perform</a><a href="#register">Entry pass</a><a href="#venue">Venue</a><a href="#reels">Reels</a><a href="#social">Followers</a></div><a class="navcta magnetic" href="#register">Register now</a><button class="menu" id="menu">☰</button></nav></header>
 
 
 
@@ -43,41 +151,67 @@
 </section>
 
 <div class="live-counts" aria-label="Live event counters">
-  <div class="live-count"><strong id="countNames">0</strong><span>NAMES JOINED</span></div>
+  <div class="live-count"><strong id="countNames">0</strong><span>PERFORMERS</span></div>
   <div class="live-count"><strong id="countReels">0</strong><span>REELS POSTED</span></div>
   <div class="live-count"><strong id="countMemories">6</strong><span>MEMORIES</span></div>
 </div>
 <main>
-<section class="hero" id="home"><div class="hero-bg"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div><div class="container hero-inner reveal"><p class="script">A new beginning ✦</p><p class="eyebrow">Hosted by the Gurucharan University Welcome Committee</p><h1>FRESHERS'<span class="line2">NIGHT</span></h1><p class="hero-copy">Music, dance floors, silly games and a hundred new friends. The seniors are throwing the doors open — <strong>come find your people.</strong></p><div class="meta"><span class="pill">EVENT DATE</span><span class="pill">VENUE</span><span class="pill">WELCOME NIGHT</span></div><div class="hero-actions"><a class="btn magnetic" href="#register">Get your pass ↗</a><a class="btn ghost" href="#memories">See memories</a></div></div><div class="hero-word">new faces · new stories · one night</div></section>
+<section class="hero" id="home"><div class="hero-bg"><div class="orb a"></div><div class="orb b"></div><div class="orb c"></div></div><div class="container hero-inner reveal"><p class="script">A new beginning ✦</p><p class="eyebrow">Hosted by the Gurucharan University Welcome Committee</p><h1>FRESHERS'<span class="line2">NIGHT</span></h1><p class="hero-copy">Music, dance floors, silly games and a hundred new friends. The seniors are throwing the doors open — <strong>come find your people.</strong></p><div class="meta"><span class="pill" data-cfg="dateShort">EVENT DATE</span><span class="pill" data-cfg="venueName">VENUE</span><span class="pill">WELCOME NIGHT</span></div><div class="hero-actions"><a class="btn magnetic" href="#coming">Participate ↗</a><a class="btn ghost" href="#memories">See memories</a></div></div><div class="hero-word">new faces · new stories · one night</div></section>
 <div class="marquee"><div class="track">✦ NEW BATCH ✦ NEW BEGINNINGS ✦ ONE UNFORGETTABLE NIGHT ✦ FRESHERS' NIGHT ✦ NEW BATCH ✦ NEW BEGINNINGS ✦ ONE UNFORGETTABLE NIGHT ✦ FRESHERS' NIGHT ✦</div></div>
+<section class="info-strip" id="info"><div class="container"><div class="info-grid"><div class="info-card reveal"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg><small>WHEN</small><b data-cfg="dateText"></b></div><div class="info-card reveal"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg><small>WHERE</small><b data-cfg="venueName"></b></div><div class="info-card reveal"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3 3 6l2.5 4L8 9v12h8V9l2.5 1L21 6l-5-3c-.5 2-2 3-4 3S8.5 5 8 3z"/></svg><small>DRESS CODE</small><b data-cfg="dressCode"></b></div><div class="info-card reveal"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><small>STARTS AT</small><b data-cfg="startText"></b></div></div></div></section>
 <section class="section" id="event"><div class="container"><div class="section-head reveal"><div><p class="script">what to expect</p><h2>The night starts <em>here.</em></h2></div><p>One night to shake off the orientation-week nerves. Live music, a DJ set, a dance battle, quick-fire games and a surprise performance from the seniors.</p></div><div class="feature-grid"><article class="feature reveal"><span class="num">01</span><h3>Live Music</h3><p>Live performances and a soundtrack for your first big night.</p><b>06:00 PM</b></article><article class="feature reveal delay1"><span class="num">02</span><h3>Dance Battle</h3><p>Solo, duo and crew performers — step in, own the floor and register before slots close.</p><b>ENTRIES OPEN</b></article><article class="feature reveal delay2"><span class="num">03</span><h3>Games + Surprises</h3><p>Quick-fire games, crowd moments and a surprise performance from the seniors.</p><b>ALL NIGHT</b></article><article class="feature wide reveal delay3"><span class="num">04</span><h3>After Party</h3><p>Because the best part of the night usually happens after the official programme. Upload the moments and build the after-movie archive.</p><b>MEMORIES →</b></article></div></div></section>
 <section class="section alt" id="memories"><div class="container"><div class="section-head reveal"><div><p class="script">from the archive</p><h2>Last year's <em>memories.</em></h2></div><p>Swipe through the archive — these animated tiles are ready to be replaced with your actual photos and videos.</p></div><div class="gallery-shell reveal"><div class="gallery-track" id="gallery"><div class="memory"><span class="memory-tag">PHOTO</span><span class="memory-label">Photo 01</span></div><div class="memory"><span class="memory-tag">PHOTO</span><span class="memory-label">Photo 02</span></div><div class="memory"><span class="memory-tag">VIDEO</span><span class="memory-label">Video highlights ▶</span></div><div class="memory"><span class="memory-tag">PHOTO</span><span class="memory-label">Photo 03</span></div><div class="memory"><span class="memory-tag">PHOTO</span><span class="memory-label">Photo 04</span></div><div class="memory"><span class="memory-tag">PHOTO</span><span class="memory-label">Photo 05</span></div></div><div class="slider-controls"><button class="circle-btn" id="prev">‹</button><button class="circle-btn" id="next">›</button></div></div></div></section>
 
 <section class="section dark" id="coming"><div class="container">
   <div class="section-head reveal">
-    <div><p class="script">write your name</p><h2>Who's <em>coming?</em></h2></div>
-    <p>Drop your details below and your name will appear in the list.</p>
+    <div><p class="script">on stage</p><h2>Want to <em>perform?</em></h2></div>
+    <p>Dance, music or something extra — register your act in a minute and see who else is on the line-up.</p>
   </div>
-  <div class="panel reveal coming-card">
-    <form class="form" id="nameForm">
-      <div class="form-grid">
-        <label>YOUR NAME<input id="visitorName" name="name" required maxlength="40" autocomplete="name" placeholder="Write your name"></label>
-        <label>PHONE NUMBER<input id="visitorPhone" name="phone" type="tel" required maxlength="15" autocomplete="tel" inputmode="tel" placeholder="+91"></label>
-        <fieldset class="full pick-group">
-          <legend>WHAT WILL YOU PARTICIPATE IN? (pick one or more)</legend>
-          <div class="pick-row">
-            <label class="pick"><input type="checkbox" name="participate" value="Dance"><span>Dance</span></label>
-            <label class="pick"><input type="checkbox" name="participate" value="Music"><span>Music</span></label>
-            <label class="pick"><input type="checkbox" name="participate" value="Extra"><span>Extra</span></label>
-          </div>
-        </fieldset>
-        <label class="full">YOUR THOUGHT<textarea id="visitorThought" name="thought" maxlength="150" placeholder="Write something about the night..."></textarea></label>
-      </div>
-      <button class="btn form-submit" type="submit">Add my name ↗</button>
-    </form>
-    <div id="nameList" class="name-list" aria-live="polite"></div>
+  <div class="panel reveal participate-card">
+    <p class="eyebrow">WANT TO PERFORM?</p>
+    <h3>Show us what you've got.</h3>
+    <div class="inline-form-wrap">
+      <form class="form" id="participateForm">
+        <div class="form-grid">
+          <label class="full">FULL NAME<input id="pName" name="fullName" required maxlength="40" autocomplete="name" placeholder="Your full name"></label>
+          <label>ROLL NUMBER<input name="roll" required maxlength="20" autocomplete="off" placeholder="Your roll number"></label>
+          <label>SEMESTER<select name="semester" required><option value="" selected disabled>Select semester</option><option value="1">1st</option><option value="2">2nd</option><option value="3">3rd</option><option value="4">4th</option><option value="5">5th</option><option value="6">6th</option><option value="7">7th</option><option value="8">8th</option></select></label>
+          <label class="full">PHONE NUMBER<input name="phone" type="tel" required maxlength="15" autocomplete="tel" inputmode="tel" placeholder="+91"></label>
+          <fieldset class="full pick-group">
+            <legend>SOLO / GROUP</legend>
+            <div class="pick-row">
+              <label class="pick"><input type="radio" name="mode" value="Solo" checked><span>Solo</span></label>
+              <label class="pick"><input type="radio" name="mode" value="Group"><span>Group</span></label>
+            </div>
+          </fieldset>
+          <fieldset class="full pick-group">
+            <legend>EVENT / ACTIVITY</legend>
+            <div class="pick-row">
+              <label class="pick"><input type="radio" name="activity" value="Dance" required><span>Dance</span></label>
+              <label class="pick"><input type="radio" name="activity" value="Music"><span>Music</span></label>
+              <label class="pick"><input type="radio" name="activity" value="Extra"><span>Extra</span></label>
+            </div>
+          </fieldset>
+          <label class="full" id="teamWrap" hidden>TEAM MEMBERS<textarea name="team" maxlength="150" placeholder="Names of everyone in your group"></textarea></label>
+        </div>
+        <button class="btn form-submit" type="submit">Register my act ↗</button>
+      </form>
+    </div>
+    <button class="btn ghost magnetic view-performers-btn" id="openParticipants" type="button">See who's performing ✦</button>
   </div>
 </div></section>
+<div class="modal" id="participantsModal" role="dialog" aria-modal="true" aria-labelledby="lTitle">
+  <div class="modal-card">
+    <button class="modal-x" type="button" data-close-modal aria-label="Close">×</button>
+    <p class="eyebrow">LINE-UP</p>
+    <h3 id="lTitle">Who's performing</h3>
+    <div class="perform-lists reveal" aria-live="polite">
+      <div class="perform-col"><h4>Dance <span id="cntDance">0</span></h4><div class="name-list" id="listDance"></div></div>
+      <div class="perform-col"><h4>Music <span id="cntMusic">0</span></h4><div class="name-list" id="listMusic"></div></div>
+      <div class="perform-col"><h4>Extra <span id="cntExtra">0</span></h4><div class="name-list" id="listExtra"></div></div>
+    </div>
+  </div>
+</div>
 <section class="section dance" id="dance"><div class="dance-bg"></div><div class="container">
   <div class="dance-content reveal">
   <span class="pill">✦ The wait is on</span>
@@ -89,6 +223,7 @@
   <div class="dance-light"></div>
   <div class="countdown-wrap">
     <p class="eyebrow">COUNTDOWN TO FRESHERS' NIGHT</p>
+    <div class="countdown-sparkles">✦ ✧ ✦ ✧ ✦</div>
     <div class="countdown-grid">
       <div class="count-box"><b id="cdDays">00</b><span>DAYS</span></div>
       <div class="count-box"><b id="cdHours">00</b><span>HOURS</span></div>
@@ -99,22 +234,58 @@
   </div>
 </div>
 </div></section>
-<section class="section dark" id="register"><div class="container"><div class="section-head reveal"><div><p class="script">your ticket to the night</p><h2>Reserve your <em>spot.</em></h2></div><p>Two quick steps — fill the form, then pay the entry fee. Confirmation can be handled by WhatsApp or email.</p></div><div class="register-layout"><div class="panel reveal register-info">
-  <div class="panel-top"><span>REGISTRATION</span><span>ENTRY PASS</span></div>
-  <div class="register-only">
-    <p class="script">ready?</p>
-    <h3>Scan. Register. <span>Show up.</span></h3>
-    <p class="register-note">Use the QR code or the button below to open the registration form.</p>
+<section class="section dark" id="register"><div class="container">
+  <div class="section-head reveal"><div><p class="script">your ticket to the night</p><h2>Reserve your <em>spot.</em></h2></div><p>Pay the entry fee by UPI, then enter your Transaction ID to lock in your entry pass.</p></div>
+  <div class="register-layout">
+    <div class="panel reveal register-info" style="display:block;min-height:0">
+      <div class="panel-top"><span>ENTRY PASS</span></div>
+      <p class="eyebrow" style="margin-top:22px">ENTRY FEE</p>
+      <div class="fee-big" data-cfg="entryFee"></div>
+      <ol class="steps">
+        <li><b>Pay ₹200</b> to the UPI ID by any UPI app.</li>
+        <li><b>Copy the Transaction ID</b> (UTR) from your payment app.</li>
+        <li><b>Fill in the details below</b> and tap Register.</li>
+      </ol>
+      <form class="form pass-form" id="passForm">
+        <div class="form-grid">
+          <label class="full">FULL NAME<input name="passName" required maxlength="40" autocomplete="name" placeholder="Your full name"></label>
+          <label>PHONE NUMBER<input name="passPhone" type="tel" required maxlength="15" autocomplete="tel" inputmode="tel" placeholder="+91"></label>
+          <label>TRANSACTION ID<input name="txn" required maxlength="40" autocapitalize="characters" autocomplete="off" placeholder="e.g. 4123 4567 8901"></label>
+        </div>
+        <button class="btn form-submit register-button" type="submit" style="margin-top:6px">Register ↗</button>
+      </form>
+      <div class="pass-done" id="passDone" hidden></div>
+    </div>
+    <aside class="panel reveal delay1 register-qr-panel">
+      <p class="eyebrow">PAY &amp; CONFIRM</p>
+      <h3>UPI payment</h3>
+      <div class="payment-note">
+        <div class="pay-ico">₹</div>
+        <b>Pay ₹200 by UPI</b>
+        <p style="color:var(--muted);font-size:14px;margin:0">Open any UPI app (GPay, PhonePe, Paytm) and send the amount to the ID below.</p>
+      </div>
+      <div class="upi-row"><span>UPI ID: <b data-cfg="upiId"></b></span><button class="copy-btn" id="copyUpi" type="button">Copy</button></div>
+      <div class="register-cta">Pay exactly <b data-cfg="entryFee"></b> and keep the Transaction ID</div>
+    </aside>
   </div>
-</div><aside class="panel reveal delay1 register-qr-panel">
-  <p class="eyebrow">SECURE YOUR ENTRY</p>
-  <h3>Register</h3>
-  <a class="qr-link" id="googleFormQr" href="https://forms.google.com/" target="_blank" rel="noopener" aria-label="Open registration Google Form">
-    <div class="qr-link-fallback">GOOGLE FORM<br>QR</div>
-  </a>
-  <div class="register-cta">Scan or tap the QR to <b>register</b></div>
-  <a class="btn register-button" id="registerButton" href="https://forms.google.com/" target="_blank" rel="noopener">Register ↗</a>
-</aside></div></div></section>
+  <div class="big-register-wrap">
+    <button class="btn magnetic big-register-btn" id="bigRegisterBtn" type="button">Register on Google Form ↗</button>
+  </div>
+</div></section>
+<section class="section" id="venue"><div class="container">
+  <div class="section-head reveal"><div><p class="script">where it happens</p><h2>The <em>venue.</em></h2></div><p>Save the location now so you can walk in without hunting for the gate.</p></div>
+  <div class="panel reveal venue-card">
+    <div class="venue-info">
+      <p class="eyebrow">📍 VENUE</p>
+      <h3 data-cfg="venueName"></h3>
+      <p data-cfg="venueAddress"></p>
+      <a class="btn" id="mapBtn" href="#" target="_blank" rel="noopener">Open in Google Maps ↗</a>
+    </div>
+    <div class="venue-map" id="venueMap">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 21s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="9" r="2.5"/></svg>
+    </div>
+  </div>
+</div></section>
 <section class="section reels" id="reels"><div class="container"><div class="section-head reveal"><div><p class="script">make it move</p><h2>Reels <em>+</em> after party.</h2></div><p>Fifteen seconds, thirty seconds, whatever you shot on the dance floor — drop it below and it goes straight into the after-movie pile.<br><span class="reel-counter-note">Reels posted from this browser: <b id="reelSectionCount">0</b></span>
 <button class="reel-more-btn" id="reelMoreBtn" type="button" aria-label="Show all reels" aria-expanded="false">⋯</button></p></div><div class="reel-hero"><div class="reel-copy reveal"><span class="eyebrow">15 SEC / 30 SEC / ANY MOMENT</span><h3>GOT A<br><span>REEL?</span></h3><p>Upload vertical moments from the night. The real project can route these files to an organiser review queue.</p></div><label class="reel-upload reveal delay1"><input id="reelFiles" type="file" accept="video/mp4,video/quicktime" multiple><div><span class="ring">↗</span><b>UPLOAD YOUR REEL</b><small>MP4 / MOV · choose from your phone</small></div></label></div><div class="reel-list" id="reelList"></div><div class="afterparty reveal">
   <div>
@@ -126,21 +297,34 @@
   <label class="btn ghost"><input id="afterFiles" type="file" accept="video/mp4,video/quicktime" multiple style="display:none">＋ Add videos</label>
 </div>
 <div class="reel-list" id="afterList"></div></div></section>
-<section class="section social" id="social"><div class="container"><div class="social-card reveal"><div><p class="script">stay in the loop</p><h2>Follow the <em>energy.</em></h2><p style="color:var(--muted);font-size:17px;line-height:1.7">Event updates, rehearsal clips, winner announcements and the best crowd moments.</p></div><div class="followers"><small>FOLLOWERS</small><strong id="igFollowers">—</strong><a class="btn" href="https://www.instagram.com/abhijit_kb/" target="_blank" rel="noopener">Follow @abhijit_kb ↗</a></div></div></div></section>
+<section class="section social" id="social"><div class="container"><div class="social-card reveal"><div><p class="script">stay in the loop</p><h2>Follow the <em>energy.</em></h2><p style="color:var(--muted);font-size:17px;line-height:1.7">Event updates, rehearsal clips, winner announcements and the best crowd moments.</p></div><div class="followers"><svg class="ig-logo" viewBox="0 0 48 48" aria-label="Instagram"><defs><linearGradient id="igg" x1="0" y1="1" x2="1" y2="0"><stop offset="0" stop-color="#feda75"/><stop offset=".35" stop-color="#fa7e1e"/><stop offset=".6" stop-color="#d62976"/><stop offset="1" stop-color="#4f5bd5"/></linearGradient></defs><rect width="48" height="48" rx="13" fill="url(#igg)"/><rect x="12" y="12" width="24" height="24" rx="7" fill="none" stroke="#fff" stroke-width="3"/><circle cx="24" cy="24" r="5.5" fill="none" stroke="#fff" stroke-width="3"/><circle cx="31.5" cy="16.5" r="1.8" fill="#fff"/></svg><small>FOLLOWERS</small><strong id="igFollowers">—</strong><a class="btn" id="igFollow" href="https://www.instagram.com/" target="_blank" rel="noopener">Follow ↗</a></div></div></div></section>
 <section class="section dark" id="programme"><div class="container"><div class="section-head reveal"><div><p class="script">the programme</p><h2>One night.<br><em>Four chapters.</em></h2></div></div><div class="timeline"><div class="time reveal"><b>06:00</b><div><h3>Doors open</h3><p>Registration, meet & greet and photo wall.</p></div></div><div class="time reveal"><b>06:45</b><div><h3>Stage begins</h3><p>Music, welcome and opening performances.</p></div></div><div class="time reveal"><b>08:00</b><div><h3>Dance Battle</h3><p>Performers take over the floor.</p></div></div><div class="time reveal"><b>09:30+</b><div><h3>After Party</h3><p>DJ set, games, reels and final memories.</p></div></div></div></div></section>
 <section class="section" id="team"><div class="container"><div class="section-head reveal"><div><p class="script">the people</p><h2>Built by the <em>crew.</em></h2></div><p>The volunteers making the night happen — follow them for behind-the-scenes drops and event updates.</p></div><div class="team-grid"><div class="person reveal"><div class="avatar"></div><b>Volunteer Name</b><small>Event Lead</small></div><div class="person reveal delay1"><div class="avatar"></div><b>Volunteer Name</b><small>Logistics</small></div><div class="person reveal delay2"><div class="avatar"></div><b>Volunteer Name</b><small>Media & Design</small></div><div class="person reveal delay3"><div class="avatar"></div><b>Volunteer Name</b><small>Hospitality</small></div></div></div></section>
-<section class="section dark" id="faq"><div class="container faq"><div class="section-head reveal"><div><p class="script">quick answers</p><h2>Before you <em>arrive.</em></h2></div></div><details class="reveal"><summary>How do I register? <span>＋</span></summary><p>Use the registration section and scan or tap the QR to open the Google Form.</p></details><details class="reveal"><summary>Can I upload a reel after the event? <span>＋</span></summary><p>Yes. The reel and after-party upload areas are designed for event footage and organiser review.</p></details><details class="reveal"><summary>Where will my submission go? <span>＋</span></summary><p>In the working project, forms and media can be sent to a backend for organiser review and moderation.</p></details></div></section>
+<section class="section dark" id="faq"><div class="container faq"><div class="section-head reveal"><div><p class="script">quick answers</p><h2>Before you <em>arrive.</em></h2></div></div><details class="reveal"><summary>How do I register? <span>＋</span></summary><p><b>To perform:</b> tap <em>Participate now</em> and fill in the form. <b>For your entry pass:</b> scan the QR in the Entry Pass section, pay <span data-cfg="entryFee"></span>, then enter your Transaction ID and tap Register.</p></details><details class="reveal"><summary>Until when is registration open? <span>＋</span></summary><p>Registration is open until <span data-cfg="deadline"></span>.</p></details><details class="reveal"><summary>What is the entry fee? <span>＋</span></summary><p>The entry fee is <span data-cfg="entryFee"></span> per person, paid by UPI through the QR in the Entry Pass section.</p></details><details class="reveal"><summary>What is the reporting time? <span>＋</span></summary><p>Please report by <span data-cfg="reportingTime"></span>. The programme starts at <span data-cfg="startText"></span>.</p></details><details class="reveal"><summary>Is there a dress code? <span>＋</span></summary><p><span data-cfg="dressCode"></span></p></details><details class="reveal"><summary>How does solo / group participation work? <span>＋</span></summary><p>Choose <em>Solo</em> or <em>Group</em> in the participation form. For a group, one person registers and adds all team member names. You can register for more than one activity — just submit the form again.</p></details><details class="reveal"><summary>Whom do I contact? <span>＋</span></summary><p><span id="faqContacts"></span></p></details></div></section>
 </main>
 <footer class="footer"><div class="container footer-inner">
   <div><div class="brand"><span class="brand-mark">FN</span><span>Freshers' Night</span></div><p>New faces · new stories · one unforgettable night.</p></div>
-  <div class="footer-links"><a href="#register">Register</a><a href="#memories">Memories</a><a href="#reels">Reels</a><a href="#social">Followers</a><a href="#faq">FAQ</a></div>
+  <div class="footer-links"><a href="#coming">Perform</a><a href="#register">Entry pass</a><a href="#venue">Venue</a><a href="#social">Followers</a><a href="#faq">FAQ</a></div>
+  <div class="footer-contact"><small>NEED HELP? CALL</small><div id="footerContacts"></div></div>
   <div class="creator-footer">
     <div class="creator-avatar" id="creatorAvatar">WEB<br>DESIGN</div>
     <div class="creator-copy"><small>Designed & developed by</small><b id="creatorName">YOUR NAME</b><p>Web Design · UI · Motion · Event Experience</p></div>
   </div>
   <p style="margin-top:28px;font-size:11px;color:#756d7d">© 2026 Freshers' Night · Built for the night, designed for the memories.</p>
 </div></footer>
-<div class="mobilebar"><a href="#register">Register</a><a href="#social">Followers</a></div>
+<div class="mobilebar"><a href="#coming">Perform</a><a href="#register">Entry pass</a></div>
+<div class="sem-popup" id="semPopup">
+  <div class="sem-card">
+    <h4>Which semester are you in?</h4>
+    <p>This opens the correct registration form for you.</p>
+    <div class="sem-options">
+      <button type="button" data-sem="first">1st Semester</button>
+      <button type="button" data-sem="senior">3rd Semester</button>
+      <button type="button" data-sem="senior">5th Semester</button>
+    </div>
+    <button class="sem-close" type="button" id="semClose">Cancel</button>
+  </div>
+</div>
 <script src="script.js"></script>
 <div id="toast"></div>
 </body></html>
