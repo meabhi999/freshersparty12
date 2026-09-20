@@ -1,4 +1,28 @@
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+/* =====================================================================
+   SITE SETTINGS — change the details of the event ONLY here.
+   Everything on the page (info cards, venue, payment, FAQ, contacts,
+   Instagram) is filled from this block.
+   ===================================================================== */
+const SITE={
+  eventDate:'2026-10-07T18:00:00+05:30', // date + start time (also drives the countdown)
+  venueName:'Venue name',                // e.g. 'Gurucharan University Auditorium'
+  venueAddress:'Full address here',
+  mapLink:'',                            // paste the Google Maps share link (optional)
+  mapQuery:'',                           // e.g. 'Gurucharan University Silchar' -> shows a live map
+  dressCode:'Party wear · dress to impress ✦', // e.g. 'Party wear / Ethnic'
+  reportingTime:'TBA',                   // e.g. '5:30 PM'
+  deadline:'TBA',                        // e.g. '5 October, 6:00 PM'
+  entryFee:'₹200',                       // e.g. '₹100'
+  upiId:'yourname@upi',                  // your UPI ID
+  qrImage:'qr.png',                      // upload your QR picture with this name
+  posterImage:'poster.jpg',              // upload the poster with this name
+  instagram:'abhijit_kb',                // Instagram username (without @)
+  followers:'—',                         // type the follower number here, e.g. 1250
+  contacts:[                             // shown in the footer and FAQ
+    {name:'Contact name',phone:'+91XXXXXXXXXX'}
+  ]
+};
 const progress=$('#progress');
 addEventListener('scroll',()=>{const h=document.documentElement.scrollHeight-innerHeight;progress.style.width=(scrollY/Math.max(1,h)*100)+'%'});
 const cursor=$('#cursor');addEventListener('pointermove',e=>{cursor.style.left=e.clientX+'px';cursor.style.top=e.clientY+'px'});
@@ -72,56 +96,110 @@ const stopAfterDrag=()=>{afterDown=false;afterList.classList.remove('dragging')}
 afterList?.addEventListener('pointerup',stopAfterDrag);
 afterList?.addEventListener('pointercancel',stopAfterDrag);
 
-// attendee names — saved on the server (Cloudflare KV); only names are shown publicly
-const nameForm=$('#nameForm'), nameInput=$('#visitorName'), phoneInput=$('#visitorPhone'), thoughtInput=$('#visitorThought'), nameList=$('#nameList');
-
 function animateCounter(el,target){
   const start=Number(el.textContent)||0, end=Number(target)||0, duration=850, t0=performance.now();
   function tick(t){const p=Math.min(1,(t-t0)/duration),e=1-Math.pow(1-p,3);el.textContent=Math.round(start+(end-start)*e);if(p<1)requestAnimationFrame(tick)}
   requestAnimationFrame(tick);
 }
-let publicNames=[];
-const countNamesEl=$('#countNames');
 function cleanName(n){return String(n).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
-function renderNames(){
-  nameList.innerHTML=publicNames.map(n=>`<span class="name-chip">${cleanName(n)}</span>`).join('');
-  if(countNamesEl) animateCounter(countNamesEl,publicNames.length);
+
+/* ---------- Performers: popup form + Dance / Music / Extra lists ---------- */
+const ACTS=['Dance','Music','Extra'];
+const countNamesEl=$('#countNames');
+let performers=[];
+function renderPerformers(){
+  ACTS.forEach(a=>{
+    const list=performers.filter(p=>p.activity===a);
+    const box=$('#list'+a), cnt=$('#cnt'+a);
+    if(cnt) cnt.textContent=list.length;
+    if(box) box.innerHTML=list.length
+      ? list.map(p=>`<span class="name-chip">${cleanName(p.name)}${p.mode==='Group'?' <em>· group</em>':''}</span>`).join('')
+      : '<span class="name-empty">Be the first ✦</span>';
+  });
+  const uniq=new Set(performers.map(p=>p.name.toLowerCase())).size;
+  if(countNamesEl) animateCounter(countNamesEl,uniq);
 }
-async function loadNames(){
+async function loadPerformers(){
   try{
     const res=await fetch('/names',{cache:'no-store'});
     if(!res.ok) throw new Error('load failed');
     const data=await res.json();
-    publicNames=data.map(r=>r.name);
-    renderNames();
+    performers=data.map(r=>({name:r.name,activity:r.activity,mode:r.mode}));
+    renderPerformers();
   }catch(e){}
 }
-nameForm?.addEventListener('submit',async e=>{
+const pForm=$('#participateForm'), teamWrap=$('#teamWrap');
+/* the participation form now lives directly on the page; only the
+   "who's performing" line-up still opens as a popup */
+const listModal=$('#participantsModal');
+function openListModal(){listModal?.classList.add('open');document.body.style.overflow='hidden'}
+function closeAnyModal(){$$('.modal.open').forEach(m=>m.classList.remove('open'));document.body.style.overflow=''}
+$('#openParticipants')?.addEventListener('click',openListModal);
+$$('[data-close-modal]').forEach(b=>b.addEventListener('click',closeAnyModal));
+$$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeAnyModal()}));
+addEventListener('keydown',e=>{if(e.key==='Escape')closeAnyModal()});
+$$('input[name="mode"]').forEach(r=>r.addEventListener('change',()=>{teamWrap.hidden=pForm.elements['mode'].value!=='Group'}));
+pForm?.addEventListener('submit',async e=>{
   e.preventDefault();
-  const name=nameInput.value.trim().replace(/\s+/g,' ');
-  const phone=phoneInput.value.trim();
-  const thought=thoughtInput.value.trim();
-  const participate=[...nameForm.querySelectorAll('input[name="participate"]:checked')].map(i=>i.value);
-  if(!name) return;
-  if(phone.replace(/\D/g,'').length<10){toast('Enter a valid phone number');return}
-  if(!participate.length){toast('Pick at least one: Dance, Music or Extra');return}
-  const btn=nameForm.querySelector('button[type="submit"]');
+  const f=pForm.elements;
+  const data={
+    name:f['fullName'].value.trim().replace(/\s+/g,' '),
+    roll:f['roll'].value.trim(),
+    semester:f['semester'].value,
+    phone:f['phone'].value.trim(),
+    mode:f['mode'].value,
+    activity:f['activity'].value,
+    team:f['team'].value.trim()
+  };
+  if(!data.name||!data.roll) return;
+  if(data.phone.replace(/\D/g,'').length<10){toast('Enter a valid phone number');return}
+  if(!data.activity){toast('Choose Dance, Music or Extra');return}
+  if(data.mode==='Group'&&!data.team){toast('Add your team members');return}
+  const btn=pForm.querySelector('button[type="submit"]');
   btn.disabled=true;
   try{
-    const res=await fetch('/names',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({name,phone,participate,thought})});
-    const data=await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(data.error||'Could not save. Try again.');
-    if(!publicNames.some(x=>x.toLowerCase()===name.toLowerCase())) publicNames.push(name);
-    renderNames();
-    nameForm.reset();
-    toast(data.updated?'Details updated ✓':'Name added ✓');
+    const res=await fetch('/names',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)});
+    const out=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(out.error||'Could not save. Try again.');
+    if(!performers.some(p=>p.name.toLowerCase()===data.name.toLowerCase()&&p.activity===data.activity)) performers.push({name:data.name,activity:data.activity,mode:data.mode});
+    renderPerformers();
+    pForm.reset();teamWrap.hidden=true;
+    toast(out.updated?`${data.activity} details updated ✓`:`Registered for ${data.activity} ✓`);
   }catch(err){
     toast(err.message||'Something went wrong. Try again.');
   }finally{
     btn.disabled=false;
   }
 });
-loadNames();
+loadPerformers();
+
+/* ---------- Entry pass (payment Transaction ID) ---------- */
+const passForm=$('#passForm'), passDone=$('#passDone');
+passForm?.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const f=passForm.elements;
+  const body={name:f['passName'].value.trim().replace(/\s+/g,' '),phone:f['passPhone'].value.trim(),txn:f['txn'].value.trim()};
+  if(body.phone.replace(/\D/g,'').length<10){toast('Enter a valid phone number');return}
+  if(body.txn.replace(/\s+/g,'').length<6){toast('Enter a valid Transaction ID');return}
+  const btn=passForm.querySelector('button[type="submit"]');
+  btn.disabled=true;
+  try{
+    const res=await fetch('/pass',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const out=await res.json().catch(()=>({}));
+    if(!res.ok) throw new Error(out.error||'Could not save. Try again.');
+    passForm.reset();
+    passDone.hidden=false;
+    passDone.innerHTML='✓ <b>Entry pass request received.</b><br>The organisers will verify your payment. Keep your Transaction ID safe.';
+    toast('Entry pass request sent ✓');
+  }catch(err){
+    toast(err.message||'Something went wrong. Try again.');
+  }finally{
+    btn.disabled=false;
+  }
+});
+$('#copyUpi')?.addEventListener('click',async()=>{
+  try{await navigator.clipboard.writeText(SITE.upiId);toast('UPI ID copied ✓')}catch(e){toast(SITE.upiId)}
+});
 
 
 // Local reel previews: every selected reel becomes a large side-by-side playable card.
@@ -177,7 +255,7 @@ const stopReelDrag=()=>{reelDragDown=false;reelList?.classList.remove('dragging'
 reelList?.addEventListener('pointerup',stopReelDrag);
 reelList?.addEventListener('pointercancel',stopReelDrag);
 // Event countdown. Change this one value when the final event date/time is confirmed.
-const EVENT_DATE='2026-10-07T18:00:00+05:30';
+const EVENT_DATE=SITE.eventDate;
 const cd={d:$('#cdDays'),h:$('#cdHours'),m:$('#cdMinutes'),s:$('#cdSeconds'),status:$('#countdownStatus')};
 function updateCountdown(){
   const diff=new Date(EVENT_DATE).getTime()-Date.now();
@@ -195,11 +273,6 @@ function updateCountdown(){
 }
 updateCountdown();setInterval(updateCountdown,1000);
 
-// Google Form link — replace this with your actual Google Form URL.
-const GOOGLE_FORM_URL='https://forms.google.com/';
-const formCta=$('#googleFormQr'), registerButton=$('#registerButton');
-if(formCta) formCta.href=GOOGLE_FORM_URL;
-if(registerButton) registerButton.href=GOOGLE_FORM_URL;
 // Creator footer — replace these two values with the designer's real name/photo.
 const CREATOR_NAME='YOUR NAME';
 const CREATOR_PHOTO='';
@@ -208,23 +281,53 @@ if(creatorNameEl) creatorNameEl.textContent=CREATOR_NAME;
 if(creatorAvatarEl && CREATOR_PHOTO){creatorAvatarEl.innerHTML=`<img src="${CREATOR_PHOTO}" alt="${CREATOR_NAME}">`;creatorAvatarEl.querySelector('img').style.display='block';}
 
 
-/* Instagram live stats hook.
-   Set window.INSTAGRAM_STATS_ENDPOINT to your own authenticated backend endpoint that returns:
-   {"followers":1234,"following":456,"posts":78}
-   Do not put an Instagram access token in this HTML file. */
-const INSTAGRAM_USERNAME='abhijit_kb';
-async function loadInstagramStats(){
-  const endpoint=window.INSTAGRAM_STATS_ENDPOINT;
-  if(!endpoint) return;
-  try{
-    const res=await fetch(endpoint,{cache:'no-store'});
-    if(!res.ok) throw new Error('stats request failed');
-    const data=await res.json();
-    if(Number.isFinite(+data.followers)) $('#igFollowers').textContent=Number(data.followers).toLocaleString();
-    if(Number.isFinite(+data.following)) $('#igFollowing').textContent=Number(data.following).toLocaleString();
-    if(Number.isFinite(+data.posts)) $('#igPosts').textContent=Number(data.posts).toLocaleString();
-    $('#igLiveNote').textContent='Updated live from the connected Instagram stats service.';
-  }catch(e){}
-}
-loadInstagramStats();
-setInterval(loadInstagramStats,30000);
+/* ---------- Fill the page from SITE settings ---------- */
+(function fillSite(){
+  const d=new Date(SITE.eventDate), tz='Asia/Kolkata';
+  if(!isNaN(d)){
+    SITE.dateText=d.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric',timeZone:tz});
+    SITE.dateShort=d.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric',timeZone:tz});
+    SITE.startText=d.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:tz}).toUpperCase();
+  }
+  $$('[data-cfg]').forEach(el=>{const v=SITE[el.dataset.cfg];if(v!==undefined)el.textContent=v});
+
+  // contacts (footer + FAQ)
+  const tel=p=>String(p).replace(/[^\d+]/g,'');
+  const contactLinks=SITE.contacts.map(c=>`<a href="tel:${tel(c.phone)}">${cleanName(c.name)} · ${cleanName(c.phone)}</a>`);
+  const fc=$('#footerContacts'); if(fc) fc.innerHTML=contactLinks.join('');
+  const fq=$('#faqContacts'); if(fq) fq.innerHTML='Call: '+SITE.contacts.map(c=>`${cleanName(c.name)} — <a href="tel:${tel(c.phone)}">${cleanName(c.phone)}</a>`).join(' · ');
+
+  // venue: Google Maps button + optional live map
+  const mapBtn=$('#mapBtn');
+  if(mapBtn) mapBtn.href=SITE.mapLink||('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(SITE.venueName+' '+SITE.venueAddress));
+  const vm=$('#venueMap');
+  if(vm&&SITE.mapQuery){
+    vm.innerHTML=`<iframe title="Venue map" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://www.google.com/maps?q=${encodeURIComponent(SITE.mapQuery)}&output=embed"></iframe>`;
+  }
+
+  // poster: shows poster.jpg if it exists
+  const pf=$('.poster-frame');
+  if(pf){const im=new Image();im.alt="Freshers' Night official poster";im.style.cssText='display:block;width:100%;height:auto;border-radius:inherit';
+    im.onload=()=>{const ph=pf.querySelector('.poster-placeholder');if(ph)ph.remove();pf.appendChild(im);const n=$('.poster-note');if(n)n.remove()};im.src=SITE.posterImage}
+
+  // Instagram: username, follower number (typed by you) and profile button
+  const igF=$('#igFollowers'); if(igF) igF.textContent=Number.isFinite(+SITE.followers)?Number(SITE.followers).toLocaleString('en-IN'):SITE.followers;
+  const igB=$('#igFollow'); if(igB){igB.href='https://www.instagram.com/'+SITE.instagram+'/';igB.textContent='Follow @'+SITE.instagram+' ↗'}
+})();
+
+/* ---------- Big "Register on Google Form" button -> semester popup ---------- */
+// Paste your real Google Form links here. "senior" is used for both 3rd and 5th semester.
+const GOOGLE_FORMS={
+  first:'',   // 1st semester Google Form link
+  senior:''   // 3rd & 5th semester Google Form link
+};
+const semPopup=$('#semPopup');
+$('#bigRegisterBtn')?.addEventListener('click',()=>{semPopup?.classList.add('open');document.body.style.overflow='hidden'});
+$('#semClose')?.addEventListener('click',()=>{semPopup?.classList.remove('open');document.body.style.overflow=''});
+semPopup?.addEventListener('click',e=>{if(e.target===semPopup){semPopup.classList.remove('open');document.body.style.overflow=''}});
+$$('.sem-options button').forEach(b=>b.addEventListener('click',()=>{
+  const link=GOOGLE_FORMS[b.dataset.sem];
+  semPopup.classList.remove('open');document.body.style.overflow='';
+  if(link) window.open(link,'_blank','noopener');
+  else toast('Add your Google Form link in script.js → GOOGLE_FORMS');
+}));
