@@ -6,10 +6,10 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
    ===================================================================== */
 const SITE={
   eventDate:'2026-10-07T18:00:00+05:30', // date + start time (also drives the countdown)
-  venueName:'Venue name',                // e.g. 'Gurucharan University Auditorium'
-  venueAddress:'Full address here',
-  mapLink:'',                            // paste the Google Maps share link (optional)
-  mapQuery:'',                           // e.g. 'Gurucharan University Silchar' -> shows a live map
+  venueName:'Gurucharan University Auditorium',                // e.g. 'Gurucharan University Auditorium'
+  venueAddress:'Gurucharan College Auditorium,Silchar,Assam',
+  mapLink:'https://maps.app.goo.gl/EWMd8SoWRgmzLwbc9',                            // paste the Google Maps share link (optional)
+  mapQuery:'GC University Auditorium',                           // e.g. 'Gurucharan University Silchar' -> shows a live map
   dressCode:'Party wear · dress to impress ✦', // e.g. 'Party wear / Ethnic'
   reportingTime:'TBA',                   // e.g. '5:30 PM'
   deadline:'TBA',                        // e.g. '5 October, 6:00 PM'
