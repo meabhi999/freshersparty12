@@ -1,48 +1,64 @@
-// Cloudflare Worker — serves the static site AND handles the /names API.
-// Every registration is saved as its OWN KV entry ("reg:<id>"), so 200 students
-// registering at the same moment can never overwrite each other.
+// Cloudflare Worker — serves the static site AND the two APIs:
+//   /names : performer registrations (Participate Now form)
+//   /pass  : entry-pass requests (payment Transaction ID)
+// Every record is its OWN KV entry, so 200 students registering at the same
+// moment can never overwrite each other.
 
 const MAX_REGISTRATIONS = 500;
-const CHOICES = ['Dance', 'Music', 'Extra'];
+const MAX_PASSES = 800;
+const ACTIVITIES = ['Dance', 'Music', 'Extra'];
+const SEMESTERS = ['1', '2', '3', '4', '5', '6', '7', '8'];
+const MODES = ['Solo', 'Group'];
 
 export default {
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (url.pathname === '/names') {
-      return handleNames(request, env, url);
-    }
-    // Everything else (index.html, style.css, script.js, admin.html, etc.)
+    if (url.pathname === '/names') return handleNames(request, env, url);
+    if (url.pathname === '/pass') return handlePass(request, env, url);
+    // Everything else (index.html, style.css, script.js, admin.html, images...)
     // is served straight from the static assets.
     return env.ASSETS.fetch(request);
   },
 };
 
+/* ---------------- performers ---------------- */
+
 async function handleNames(request, env, url) {
   if (request.method === 'GET') {
-    const supplied = request.headers.get('x-admin-password') || url.searchParams.get('password');
+    const supplied = getPassword(request, url);
     if (supplied && !passwordOk(env, supplied)) return json(401, { error: 'Wrong password' });
 
-    const records = await listAll(env);
+    const records = await listAll(env, 'reg:', toReg);
     if (supplied) return json(200, records);
-    return json(200, records.map((r) => ({ name: r.name })));
+    // Public list: name + activity only (no phone, no roll number).
+    return json(
+      200,
+      records
+        .filter((r) => ACTIVITIES.includes(r.activity))
+        .map((r) => ({ name: r.name, activity: r.activity, mode: r.mode }))
+    );
   }
 
   if (request.method === 'POST') {
-    let body = {};
-    try { body = await request.json(); } catch (e) {}
-
-    const name = String(body.name || '').trim().replace(/\s+/g, ' ').slice(0, 40);
+    const body = await readBody(request);
+    const name = clean(body.name, 40);
+    const roll = clean(body.roll, 20);
     const phone = String(body.phone || '').replace(/[^\d+]/g, '').slice(0, 15);
-    const thought = String(body.thought || '').trim().slice(0, 150);
-    const chosen = Array.isArray(body.participate) ? body.participate : [];
-    const participate = CHOICES.filter((c) => chosen.includes(c));
+    const semester = String(body.semester || '');
+    const mode = String(body.mode || '');
+    const activity = String(body.activity || '');
+    const team = clean(body.team, 150);
 
     if (!name) return json(400, { error: 'Name is required' });
+    if (!roll) return json(400, { error: 'Roll number is required' });
+    if (!SEMESTERS.includes(semester)) return json(400, { error: 'Choose your semester' });
     if (phone.replace(/\D/g, '').length < 10) return json(400, { error: 'Enter a valid phone number' });
-    if (!participate.length) return json(400, { error: 'Choose Dance, Music or Extra' });
+    if (!MODES.includes(mode)) return json(400, { error: 'Choose Solo or Group' });
+    if (!ACTIVITIES.includes(activity)) return json(400, { error: 'Choose Dance, Music or Extra' });
+    if (mode === 'Group' && !team) return json(400, { error: 'Add your team members' });
 
-    // Same name + same phone = same person, so a double tap just updates the entry.
-    const id = 'reg:' + (await sha256(name.toLowerCase() + '|' + phone.replace(/\D/g, '')));
+    // Same person + same activity = same entry, so a double tap just updates it.
+    const id = 'reg:' + (await sha256(name.toLowerCase() + '|' + phone.replace(/\D/g, '') + '|' + activity));
 
     const existing = await env.NAMES_KV.list({ prefix: 'reg:', limit: MAX_REGISTRATIONS + 1 });
     const already = existing.keys.some((k) => k.name === id);
@@ -51,63 +67,141 @@ async function handleNames(request, env, url) {
     }
 
     const time = Date.now();
-    const meta = fitMeta({ n: name, p: phone, a: participate, t: thought, ts: time });
-    await env.NAMES_KV.put(id, JSON.stringify({ name, phone, participate, thought, time }), { metadata: meta });
+    const meta = fitMeta({ n: name, r: roll, s: semester, p: phone, m: mode, a: activity, tm: team, ts: time }, 'tm');
+    await env.NAMES_KV.put(
+      id,
+      JSON.stringify({ name, roll, semester, phone, mode, activity, team, time }),
+      { metadata: meta }
+    );
     return json(200, { ok: true, updated: already });
   }
 
   if (request.method === 'DELETE') {
-    let body = {};
-    try { body = await request.json(); } catch (e) {}
-    const supplied = request.headers.get('x-admin-password') || body.password;
-    if (!passwordOk(env, supplied)) return json(401, { error: 'Wrong password' });
-
-    if (body.id && String(body.id).startsWith('reg:')) {
-      await env.NAMES_KV.delete(String(body.id));
-    } else if (body.name) {
-      const wanted = String(body.name).trim().toLowerCase();
-      const records = await listAll(env);
-      for (const r of records) {
-        if (r.name.toLowerCase() === wanted) await env.NAMES_KV.delete(r.id);
-      }
-    }
+    const body = await readBody(request);
+    if (!passwordOk(env, getPassword(request, url, body))) return json(401, { error: 'Wrong password' });
+    if (body.id && String(body.id).startsWith('reg:')) await env.NAMES_KV.delete(String(body.id));
     return json(200, { ok: true });
   }
 
   return new Response('Method not allowed', { status: 405 });
 }
 
+function toReg(k) {
+  const m = k.metadata || {};
+  return {
+    id: k.name,
+    name: m.n || '',
+    roll: m.r || '',
+    semester: m.s || '',
+    phone: m.p || '',
+    mode: m.m || '',
+    activity: Array.isArray(m.a) ? m.a[0] || '' : m.a || '',
+    team: m.tm || '',
+    time: m.ts || 0,
+  };
+}
+
+/* ---------------- entry passes (payment) ---------------- */
+
+async function handlePass(request, env, url) {
+  if (request.method === 'GET') {
+    if (!passwordOk(env, getPassword(request, url))) return json(401, { error: 'Wrong password' });
+    return json(200, await listAll(env, 'pass:', toPass));
+  }
+
+  if (request.method === 'POST') {
+    const body = await readBody(request);
+    const name = clean(body.name, 40);
+    const phone = String(body.phone || '').replace(/[^\d+]/g, '').slice(0, 15);
+    const txn = String(body.txn || '').replace(/\s+/g, '').toUpperCase();
+
+    if (!name) return json(400, { error: 'Name is required' });
+    if (phone.replace(/\D/g, '').length < 10) return json(400, { error: 'Enter a valid phone number' });
+    if (!/^[A-Z0-9]{6,30}$/.test(txn)) return json(400, { error: 'Enter a valid Transaction ID' });
+
+    const id = 'pass:' + (await sha256(txn));
+    if (await env.NAMES_KV.get(id)) {
+      return json(409, { error: 'This Transaction ID has already been used' });
+    }
+    const existing = await env.NAMES_KV.list({ prefix: 'pass:', limit: MAX_PASSES + 1 });
+    if (existing.keys.length >= MAX_PASSES) return json(409, { error: 'Passes are full' });
+
+    const time = Date.now();
+    await env.NAMES_KV.put(id, JSON.stringify({ name, phone, txn, verified: false, time }), {
+      metadata: { n: name, p: phone, x: txn, v: 0, ts: time },
+    });
+    return json(200, { ok: true });
+  }
+
+  if (request.method === 'PUT') {
+    const body = await readBody(request);
+    if (!passwordOk(env, getPassword(request, url, body))) return json(401, { error: 'Wrong password' });
+    const id = String(body.id || '');
+    if (!id.startsWith('pass:')) return json(400, { error: 'Bad id' });
+    const raw = await env.NAMES_KV.get(id);
+    if (!raw) return json(404, { error: 'Not found' });
+    const rec = JSON.parse(raw);
+    rec.verified = Boolean(body.verified);
+    await env.NAMES_KV.put(id, JSON.stringify(rec), {
+      metadata: { n: rec.name, p: rec.phone, x: rec.txn, v: rec.verified ? 1 : 0, ts: rec.time },
+    });
+    return json(200, { ok: true });
+  }
+
+  if (request.method === 'DELETE') {
+    const body = await readBody(request);
+    if (!passwordOk(env, getPassword(request, url, body))) return json(401, { error: 'Wrong password' });
+    if (body.id && String(body.id).startsWith('pass:')) await env.NAMES_KV.delete(String(body.id));
+    return json(200, { ok: true });
+  }
+
+  return new Response('Method not allowed', { status: 405 });
+}
+
+function toPass(k) {
+  const m = k.metadata || {};
+  return { id: k.name, name: m.n || '', phone: m.p || '', txn: m.x || '', verified: m.v === 1, time: m.ts || 0 };
+}
+
+/* ---------------- helpers ---------------- */
+
+function getPassword(request, url, body) {
+  return request.headers.get('x-admin-password') || (body && body.password) || url.searchParams.get('password') || '';
+}
+
 function passwordOk(env, supplied) {
   return Boolean(env.ADMIN_PASSWORD) && String(supplied || '') === env.ADMIN_PASSWORD;
 }
 
-// One list call returns every registration (details live in KV "metadata").
-async function listAll(env) {
+async function readBody(request) {
+  try {
+    return (await request.json()) || {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function clean(v, max) {
+  return String(v || '').trim().replace(/\s+/g, ' ').slice(0, max);
+}
+
+// One list call returns every record (details live in KV "metadata").
+async function listAll(env, prefix, mapper) {
   const out = [];
   let cursor;
   do {
-    const res = await env.NAMES_KV.list({ prefix: 'reg:', cursor, limit: 1000 });
-    for (const k of res.keys) {
-      const m = k.metadata || {};
-      out.push({
-        id: k.name,
-        name: m.n || '',
-        phone: m.p || '',
-        participate: m.a || [],
-        thought: m.t || '',
-        time: m.ts || 0,
-      });
-    }
+    const res = await env.NAMES_KV.list({ prefix, cursor, limit: 1000 });
+    for (const k of res.keys) out.push(mapper(k));
     cursor = res.list_complete ? undefined : res.cursor;
   } while (cursor);
   return out.sort((a, b) => a.time - b.time);
 }
 
-// KV metadata must stay under 1024 bytes; shorten the thought if needed.
-function fitMeta(meta) {
+// KV metadata must stay under 1024 bytes; shorten the long field if needed.
+function fitMeta(meta, longKey) {
   const size = (m) => new TextEncoder().encode(JSON.stringify(m)).length;
-  while (size(meta) > 1000 && meta.t.length > 0) {
-    meta.t = meta.t.slice(0, Math.floor(meta.t.length / 2));
+  while (size(meta) > 1000 && meta[longKey].length > 0) {
+    meta[longKey] = meta[longKey].slice(0, Math.floor(meta[longKey].length / 2));
   }
   return meta;
 }
