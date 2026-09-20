@@ -9,27 +9,33 @@
 *{box-sizing:border-box}
 body{margin:0;background:#090711;color:#f8f5f1;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:20px}
 h1{margin:0 0 16px;font-size:24px}
-.card{max-width:1100px;margin:0 auto}
+.card{max-width:1200px;margin:0 auto}
 input,button{font:inherit;border-radius:12px;border:1px solid rgba(255,255,255,.15);background:#171026;color:#fff;padding:12px 14px}
 button{cursor:pointer;background:#ff2f92;border-color:transparent;font-weight:700}
 button.ghost{background:transparent;border-color:rgba(255,255,255,.25)}
-button.del{background:transparent;border-color:#ff5a7a;color:#ff5a7a;padding:6px 10px}
+button.tab{background:transparent;border-color:rgba(255,255,255,.2);color:#cfc7d4}
+button.tab.on{background:#ff2f92;border-color:transparent;color:#fff}
+button.small{padding:6px 10px;font-size:13px}
+button.del{background:transparent;border:1px solid #ff5a7a;color:#ff5a7a}
+button.ok{background:#19d8cf;color:#062a28}
 .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .row input{flex:1;min-width:180px}
 .stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
 .stat{padding:10px 14px;border:1px solid rgba(255,255,255,.15);border-radius:12px;background:rgba(255,255,255,.05)}
 .stat b{font-size:20px;margin-right:6px}
 .wrap{overflow-x:auto;border:1px solid rgba(255,255,255,.12);border-radius:14px}
-table{border-collapse:collapse;width:100%;min-width:760px}
+table{border-collapse:collapse;width:100%;min-width:900px}
 th,td{padding:10px 12px;text-align:left;border-bottom:1px solid rgba(255,255,255,.08);vertical-align:top;font-size:14px}
 th{color:#b7afbd;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
 .msg{color:#ff8fb5;min-height:22px;margin:8px 0}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700}
+.badge.v{background:#19d8cf;color:#062a28}.badge.p{background:#3a2d52;color:#ffd48a}
 .hide{display:none}
 </style>
 </head>
 <body>
 <div class="card">
-  <h1>Freshers' Night — Registrations</h1>
+  <h1>Freshers' Night — Admin</h1>
 
   <div id="login">
     <div class="row">
@@ -40,15 +46,19 @@ th{color:#b7afbd;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
   <div class="msg" id="msg"></div>
 
   <div id="panel" class="hide">
+    <div class="row">
+      <button class="tab on" id="tabReg">Performers</button>
+      <button class="tab" id="tabPass">Entry passes</button>
+    </div>
     <div class="stats" id="stats"></div>
     <div class="row">
-      <input id="search" placeholder="Search name, phone or thought">
+      <input id="search" placeholder="Search…">
       <button class="ghost" id="refresh">Refresh</button>
       <button id="csv">Download CSV</button>
     </div>
     <div class="wrap">
       <table>
-        <thead><tr><th>#</th><th>Name</th><th>Phone</th><th>Participate</th><th>Thought</th><th>Time</th><th></th></tr></thead>
+        <thead id="head"></thead>
         <tbody id="rows"></tbody>
       </table>
     </div>
@@ -57,84 +67,128 @@ th{color:#b7afbd;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
 
 <script>
 const $ = (s) => document.querySelector(s);
-let password = '';
-let records = [];
+let password = '', view = 'reg', regs = [], passes = [];
+const fmt = (t) => (t ? new Date(t).toLocaleString('en-IN') : '');
 
 function setMsg(t){ $('#msg').textContent = t || ''; }
+async function api(path, method, body){
+  const res = await fetch(path, {
+    method: method || 'GET',
+    headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
+    body: body ? JSON.stringify(body) : undefined,
+    cache: 'no-store'
+  });
+  return res;
+}
 
 async function load(){
   setMsg('');
-  const res = await fetch('/names', { headers: { 'x-admin-password': password }, cache: 'no-store' });
-  if (res.status === 401) { setMsg('Wrong password'); return false; }
-  if (!res.ok) { setMsg('Could not load. Try again.'); return false; }
-  records = await res.json();
+  const [a, b] = await Promise.all([api('/names'), api('/pass')]);
+  if (a.status === 401 || b.status === 401) { setMsg('Wrong password'); return false; }
+  if (!a.ok || !b.ok) { setMsg('Could not load. Try again.'); return false; }
+  regs = await a.json(); passes = await b.json();
   $('#login').classList.add('hide');
   $('#panel').classList.remove('hide');
   render();
   return true;
 }
 
+function stat(k, v){
+  const d = document.createElement('div'); d.className = 'stat';
+  d.innerHTML = '<b>' + v + '</b>' + k; $('#stats').appendChild(d);
+}
+function addRow(tb, cells, actions){
+  const tr = document.createElement('tr');
+  cells.forEach(v => {
+    const td = document.createElement('td');
+    if (v instanceof Node) td.appendChild(v); else td.textContent = v;
+    tr.appendChild(td);
+  });
+  const td = document.createElement('td'); td.style.whiteSpace = 'nowrap';
+  actions.forEach(a => td.appendChild(a)); tr.appendChild(td); tb.appendChild(tr);
+}
+function btn(label, cls, fn){
+  const b = document.createElement('button'); b.className = 'small ' + cls; b.textContent = label;
+  b.style.marginRight = '6px'; b.onclick = fn; return b;
+}
+
 function render(){
   const q = $('#search').value.trim().toLowerCase();
-  const list = records.filter(r => !q || [r.name, r.phone, r.thought].join(' ').toLowerCase().includes(q));
-  const count = (c) => records.filter(r => (r.participate || []).includes(c)).length;
   $('#stats').innerHTML = '';
-  [['Total', records.length], ['Dance', count('Dance')], ['Music', count('Music')], ['Extra', count('Extra')]].forEach(([k, v]) => {
-    const d = document.createElement('div'); d.className = 'stat';
-    d.innerHTML = '<b>' + v + '</b>' + k; $('#stats').appendChild(d);
-  });
   const tb = $('#rows'); tb.innerHTML = '';
-  list.forEach((r, i) => {
-    const tr = document.createElement('tr');
-    [i + 1, r.name, r.phone, (r.participate || []).join(', '), r.thought, r.time ? new Date(r.time).toLocaleString('en-IN') : ''].forEach(v => {
-      const td = document.createElement('td'); td.textContent = v; tr.appendChild(td);
-    });
-    const td = document.createElement('td');
-    const b = document.createElement('button'); b.className = 'del'; b.textContent = 'Delete';
-    b.onclick = () => remove(r);
-    td.appendChild(b); tr.appendChild(td); tb.appendChild(tr);
-  });
+
+  if (view === 'reg'){
+    const c = (a) => regs.filter(r => r.activity === a).length;
+    stat('Total', regs.length); stat('Dance', c('Dance')); stat('Music', c('Music')); stat('Extra', c('Extra'));
+    stat('Groups', regs.filter(r => r.mode === 'Group').length);
+    $('#head').innerHTML = '<tr><th>#</th><th>Name</th><th>Roll</th><th>Sem</th><th>Phone</th><th>Solo/Group</th><th>Activity</th><th>Team members</th><th>Time</th><th></th></tr>';
+    regs.filter(r => !q || [r.name, r.roll, r.phone, r.activity, r.team].join(' ').toLowerCase().includes(q))
+      .forEach((r, i) => addRow(tb, [i + 1, r.name, r.roll, r.semester, r.phone, r.mode, r.activity, r.team, fmt(r.time)],
+        [btn('Delete', 'del', () => remove('/names', r))]));
+  } else {
+    const ver = passes.filter(p => p.verified).length;
+    stat('Passes', passes.length); stat('Verified', ver); stat('Pending', passes.length - ver);
+    $('#head').innerHTML = '<tr><th>#</th><th>Name</th><th>Phone</th><th>Transaction ID</th><th>Status</th><th>Time</th><th></th></tr>';
+    passes.filter(p => !q || [p.name, p.phone, p.txn].join(' ').toLowerCase().includes(q))
+      .forEach((p, i) => {
+        const s = document.createElement('span'); s.className = 'badge ' + (p.verified ? 'v' : 'p'); s.textContent = p.verified ? 'Verified' : 'Pending';
+        addRow(tb, [i + 1, p.name, p.phone, p.txn, s, fmt(p.time)], [
+          btn(p.verified ? 'Unverify' : 'Verify', p.verified ? 'ghost' : 'ok', () => verify(p)),
+          btn('Delete', 'del', () => remove('/pass', p))
+        ]);
+      });
+  }
 }
 
-async function remove(r){
+async function remove(path, r){
   if (!confirm('Delete ' + r.name + '?')) return;
-  const res = await fetch('/names', {
-    method: 'DELETE',
-    headers: { 'Content-Type': 'application/json', 'x-admin-password': password },
-    body: JSON.stringify({ id: r.id })
-  });
-  if (res.ok) { records = records.filter(x => x.id !== r.id); render(); } else setMsg('Could not delete.');
+  const res = await api(path, 'DELETE', { id: r.id });
+  if (!res.ok) return setMsg('Could not delete.');
+  if (path === '/names') regs = regs.filter(x => x.id !== r.id); else passes = passes.filter(x => x.id !== r.id);
+  render();
+}
+async function verify(p){
+  const res = await api('/pass', 'PUT', { id: p.id, verified: !p.verified });
+  if (!res.ok) return setMsg('Could not update.');
+  p.verified = !p.verified; render();
 }
 
-function csvCell(v, guard){
+function cell(v, guard){
   let s = String(v == null ? '' : v);
   if (guard && /^[=+\-@]/.test(s)) s = "'" + s;
   return '"' + s.replace(/"/g, '""') + '"';
 }
-
 function downloadCsv(){
-  const head = ['Name', 'Phone', 'Participate', 'Thought', 'Time'];
-  const lines = [head.map(h => csvCell(h)).join(',')];
-  records.forEach(r => lines.push([
-    csvCell(r.name, true), csvCell(r.phone), csvCell((r.participate || []).join(' + ')),
-    csvCell(r.thought, true), csvCell(r.time ? new Date(r.time).toLocaleString('en-IN') : '')
-  ].join(',')));
+  let head, rows, file;
+  if (view === 'reg'){
+    head = ['Name', 'Roll', 'Semester', 'Phone', 'Solo/Group', 'Activity', 'Team members', 'Time'];
+    rows = regs.map(r => [cell(r.name, 1), cell(r.roll, 1), cell(r.semester), cell(r.phone), cell(r.mode), cell(r.activity), cell(r.team, 1), cell(fmt(r.time))]);
+    file = 'freshers-performers.csv';
+  } else {
+    head = ['Name', 'Phone', 'Transaction ID', 'Status', 'Time'];
+    rows = passes.map(p => [cell(p.name, 1), cell(p.phone), cell(p.txn), cell(p.verified ? 'Verified' : 'Pending'), cell(fmt(p.time))]);
+    file = 'freshers-passes.csv';
+  }
+  const lines = [head.map(h => cell(h)).join(','), ...rows.map(r => r.join(','))];
   const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = 'freshers-registrations.csv';
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = file;
   document.body.appendChild(a); a.click(); a.remove();
 }
 
+function setView(v){
+  view = v; $('#tabReg').classList.toggle('on', v === 'reg'); $('#tabPass').classList.toggle('on', v === 'pass');
+  $('#search').value = ''; render();
+}
+$('#tabReg').onclick = () => setView('reg');
+$('#tabPass').onclick = () => setView('pass');
 $('#loginBtn').onclick = async () => {
-  password = $('#pw').value;
-  if (!password) return;
+  password = $('#pw').value; if (!password) return;
   if (await load()) { try { sessionStorage.setItem('fn_admin', password); } catch (e) {} }
 };
 $('#pw').addEventListener('keydown', e => { if (e.key === 'Enter') $('#loginBtn').click(); });
 $('#refresh').onclick = load;
 $('#search').oninput = render;
 $('#csv').onclick = downloadCsv;
-
 try {
   const saved = sessionStorage.getItem('fn_admin');
   if (saved) { password = saved; load().then(ok => { if (!ok) sessionStorage.removeItem('fn_admin'); }); }
