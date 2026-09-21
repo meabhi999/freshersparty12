@@ -125,9 +125,7 @@ body .live-count{min-width:0;flex:none;padding:28px 14px 24px;border-radius:32px
 .tile:nth-child(2):after{animation-delay:1.2s}.tile:nth-child(3):after{animation-delay:2.4s}.tile:nth-child(4):after{animation-delay:3.6s}
 .tile .ico{width:36px;height:36px;margin-bottom:16px}
 .tile b{display:block;font-family:Manrope;font-size:19px;line-height:1.2}
-.tile span{display:block;margin-top:6px;font-size:11px;letter-spacing:.14em;color:var(--muted);font-weight:800}
-
-/* countdown: more alive */
+.tile span{display:block;margin-top:6px;font-size:11px;letter-spacing:.14em;color:var(--muted);font-weight:800}/* countdown: more alive */
 .dance{min-height:0}
 .floaters{position:absolute;inset:0;pointer-events:none;z-index:1;overflow:hidden}
 .floaters .ico{position:absolute;stroke-width:1.4;color:rgba(255,255,255,.16);animation:fl 7s ease-in-out infinite}
@@ -243,7 +241,7 @@ body .live-count{min-width:0;flex:none;padding:28px 14px 24px;border-radius:32px
 .drive-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:30px}
 .drive-grid:empty:before{content:"Photos uploaded here will appear for everyone ✦";grid-column:1/-1;padding:55px 20px;border:1px dashed rgba(255,255,255,.13);border-radius:28px;text-align:center;color:var(--muted);background:rgba(255,255,255,.018)}
 .d-item{position:relative;aspect-ratio:1;border:1px solid var(--line);border-radius:22px;overflow:hidden;background:#0d0916;padding:0;cursor:pointer;animation:chipPop .5s var(--ease) both}
-.d-item img,.d-item video{width:100%;height:100%;object-fit:cover;display:block;transition:transform.5s var(--ease);pointer-events:none}
+.d-item img,.d-item video{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s var(--ease);pointer-events:none}
 .d-item:hover img,.d-item:hover video{transform:scale(1.07)}
 .d-item .tag{position:absolute;right:10px;top:10px;padding:5px 10px;border-radius:999px;background:rgba(8,6,13,.78);font-size:11px;font-weight:800;color:#fff}
 .d-item .by{position:absolute;left:10px;bottom:10px;max-width:75%;padding:5px 11px;border-radius:999px;background:rgba(8,6,13,.72);font-size:11px;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -258,8 +256,7 @@ body .live-count{min-width:0;flex:none;padding:28px 14px 24px;border-radius:32px
 .ticket-bot b{white-space:nowrap}
 .floaters .f3{bottom:3%}.floaters .f4{bottom:4%}
 @media(max-width:850px){.hero h1{font-size:clamp(66px,20.5vw,130px)}}
-</style>
-</head>
+</style></head>
 <body>
 <div class="noise"></div><div class="cursor" id="cursor"></div><div class="progress"><i id="progress"></i></div>
 <header class="header"><nav class="nav"><a href="#home" class="brand"><span class="brand-mark">FN</span><span>Freshers' Night</span></a><div class="navlinks" id="navlinks"><a href="#event">Event</a><a href="#memories">Memories</a><a href="#coming">Perform</a><a href="#register">Entry pass</a><a href="#venue">Venue</a><a href="#reels">Reels</a><a href="#drive">Drive</a></div><a class="navcta magnetic" href="#register">Register now</a><button class="menu" id="menu">☰</button></nav></header>
@@ -379,8 +376,7 @@ body .live-count{min-width:0;flex:none;padding:28px 14px 24px;border-radius:32px
       <button class="btn register-big" id="openRegister" type="button">REGISTER NOW ↗</button>
     </div>
   </div>
-</div></section>
-<section class="section" id="venue"><div class="container">
+</div></section><section class="section" id="venue"><div class="container">
   <div class="section-head reveal"><div><p class="script">where it happens</p><h2>The <em>venue.</em></h2></div><p>Save the location now so you can walk in without hunting for the gate.</p></div>
   <div class="panel reveal venue-card">
     <div class="venue-info">
@@ -398,7 +394,7 @@ body .live-count{min-width:0;flex:none;padding:28px 14px 24px;border-radius:32px
 <button class="reel-more-btn" id="reelMoreBtn" type="button" aria-label="Show all reels" aria-expanded="false">⋯</button></p></div><div class="reel-hero"><div class="reel-copy reveal"><span class="eyebrow">15 SEC / 30 SEC / ANY MOMENT</span><h3>GOT A<br><span>REEL?</span></h3><p>Upload vertical moments and photos from the night. Everything you post appears right here for everyone to watch and download.</p>
 <label class="up-namebox">YOUR NAME (OPTIONAL)<input id="reelName" maxlength="40" autocomplete="name" placeholder="Shown next to your upload"></label></div><label class="reel-upload reveal delay1"><input id="reelFiles" type="file" accept="video/mp4,video/quicktime,video/webm,image/jpeg,image/png,image/webp,image/gif" multiple><div><span class="ring">↗</span><b>UPLOAD YOUR REEL OR PHOTO</b><small>MP4 / MOV · JPG / PNG · choose from your phone</small></div></label></div><div class="up-status" id="reelStatus"></div><div class="reel-list" id="reelList"></div></div></section>
 <section class="section drive" id="drive"><div class="container">
-  <div class="section-head reveal"><div><p class="script">everyone's album</p><h2>The shared <em>drive.</em></h2></div><p>Got photos from the night? Drop them here. Anyone can upload, and anyone can view and download.<br><span class="reel-counter-note">Files in the drive: <bid="driveCount">0</b></span></p></div>
+  <div class="section-head reveal"><div><p class="script">everyone's album</p><h2>The shared <em>drive.</em></h2></div><p>Got photos from the night? Drop them here. Anyone can upload, and anyone can view and download.<br><span class="reel-counter-note">Files in the drive: <b id="driveCount">0</b></span></p></div>
   <label class="dropzone reveal" id="dropzone"><input id="driveFiles" type="file" accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/quicktime,video/webm" multiple><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 18a4.5 4.5 0 0 1-.6-8.96A6 6 0 0 1 18 8.5a4 4 0 0 1-.5 9.5H7z"/><path d="M12 17v-6M9.5 13.5 12 11l2.5 2.5"/></svg><b>Drop photos here, or tap to choose</b><small>JPG · PNG · WEBP · GIF · MP4 · MOV — big photos are shrunk automatically</small></label>
   <label class="up-namebox drive-name">YOUR NAME (OPTIONAL)<input id="driveName" maxlength="40" autocomplete="name" placeholder="Shown next to your upload"></label>
   <div class="up-status" id="driveStatus"></div>
@@ -455,5 +451,4 @@ body .live-count{min-width:0;flex:none;padding:28px 14px 24px;border-radius:32px
 </div>
 <script src="script.js"></script>
 <div id="toast"></div>
-</body>
-</html>
+</body></html>
