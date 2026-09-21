@@ -6,16 +6,16 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
    ===================================================================== */
 const SITE={
   eventDate:'2026-10-07T18:00:00+05:30', // date + start time (also drives the countdown)
-  venueName:'Gurucharan University Auditorium',                // e.g. 'Gurucharan University Auditorium'
-  venueAddress:'Gurucharan College Auditorium,Silchar,Assam',
-  mapLink:'https://maps.app.goo.gl/EWMd8SoWRgmzLwbc9',                            // paste the Google Maps share link (optional)
-  mapQuery:'GC University Auditorium',                           // e.g. 'Gurucharan University Silchar' -> shows a live map
-  dressCode:'Party wear · dress to impress ✦', // e.g. 'Party wear / Ethnic'
+  venueName:'Venue name',                // e.g. 'Gurucharan University Auditorium'
+  venueAddress:'Full address here',
+  mapLink:'',                            // paste the Google Maps share link (optional)
+  mapQuery:'',                           // e.g. 'Gurucharan University Silchar' -> shows a live map
+  dressCode:'TBA',                       // e.g. 'Party wear / Ethnic'
   reportingTime:'TBA',                   // e.g. '5:30 PM'
   deadline:'TBA',                        // e.g. '5 October, 6:00 PM'
-  entryFee:'₹200',                       // e.g. '₹100'
-  upiId:'yourname@upi',                  // your UPI ID
-  qrImage:'qr.png',                      // upload your QR picture with this name
+  entryFee:'₹200',                       // entry fee shown on the page
+  formFirstSem:'',                       // Google Form link for 1st semester students (paste between the quotes)
+  formThirdFifthSem:'',                  // Google Form link for 3rd and 5th semester students
   posterImage:'poster.jpg',              // upload the poster with this name
   instagram:'abhijit_kb',                // Instagram username (without @)
   followers:'—',                         // type the follower number here, e.g. 1250
@@ -53,48 +53,7 @@ g.addEventListener('pointerup',stopDrag);
 g.addEventListener('pointercancel',stopDrag);
 g.addEventListener('pointerleave',()=>{if(down && !g.hasPointerCapture?.(0))stopDrag()});
 function toast(msg){let t=$('#toast');if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;right:18px;bottom:90px;z-index:200;padding:14px 18px;border:1px solid rgba(255,255,255,.15);border-radius:14px;background:rgba(15,10,24,.95);color:#fff;box-shadow:0 15px 50px #0008;transform:translateY(20px);opacity:0;transition:.3s';document.body.appendChild(t)}t.textContent=msg;t.style.opacity=1;t.style.transform='none';clearTimeout(t._x);t._x=setTimeout(()=>{t.style.opacity=0;t.style.transform='translateY(20px)'},2600)}
-const afterFiles=$('#afterFiles'), afterList=$('#afterList'), afterSectionCount=$('#afterSectionCount');
-let afterVideos=[];
-function renderAfterParty(){
-  if(!afterVideos.length){
-    afterList.innerHTML='<div class="reel-empty">After-party videos uploaded here will appear large and playable ✦</div>';
-  }else{
-    afterList.innerHTML=afterVideos.map((r,i)=>`<article class="reel-item">
-      <video src="${r.url}" controls playsinline preload="metadata"></video>
-      <div class="reel-meta">After-party ${i+1} · ${r.file.name.replace(/[<>"']/g,'')}</div>
-      <div class="media-actions">
-        <a class="media-download" href="${r.url}" download="${r.file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}">↓ Download</a>
-      </div>
-    </article>`).join('');
-  }
-  if(afterSectionCount) animateCounter(afterSectionCount,afterVideos.length);
-}
-afterFiles?.addEventListener('change',()=>{
-  const files=[...(afterFiles.files||[])].filter(f=>f.type.startsWith('video/'));
-  files.forEach(file=>afterVideos.push({file,url:URL.createObjectURL(file)}));
-  renderAfterParty();
-  afterFiles.value='';
-  if(files.length){
-    toast(`${files.length} after-party video${files.length>1?'s':''} posted ✓`);
-    requestAnimationFrame(()=>afterList.scrollTo({left:afterList.scrollWidth,behavior:'smooth'}));
-  }
-});
-renderAfterParty();
 
-
-let afterDown=false,afterStartX=0,afterScrollLeft=0;
-afterList?.addEventListener('pointerdown',e=>{
-  if(e.pointerType==='mouse' && e.button!==0)return;
-  afterDown=true;afterStartX=e.clientX;afterScrollLeft=afterList.scrollLeft;
-  afterList.classList.add('dragging');afterList.setPointerCapture?.(e.pointerId);
-});
-afterList?.addEventListener('pointermove',e=>{
-  if(!afterDown)return;
-  afterList.scrollLeft=afterScrollLeft-(e.clientX-afterStartX)*1.05;
-});
-const stopAfterDrag=()=>{afterDown=false;afterList.classList.remove('dragging')};
-afterList?.addEventListener('pointerup',stopAfterDrag);
-afterList?.addEventListener('pointercancel',stopAfterDrag);
 
 function animateCounter(el,target){
   const start=Number(el.textContent)||0, end=Number(target)||0, duration=850, t0=performance.now();
@@ -103,9 +62,20 @@ function animateCounter(el,target){
 }
 function cleanName(n){return String(n).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
 
-/* ---------- Performers: popup form + Dance / Music / Extra lists ---------- */
+/* ---------- Modals ---------- */
+function openModal(m){if(!m)return;m.classList.add('open');document.body.style.overflow='hidden'}
+function closeModals(){
+  $$('.modal.open').forEach(m=>m.classList.remove('open'));
+  document.body.style.overflow='';
+  const lb=$('#lbBody'); if(lb) lb.innerHTML='';
+}
+$$('[data-close-modal]').forEach(b=>b.addEventListener('click',closeModals));
+$$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeModals()}));
+addEventListener('keydown',e=>{if(e.key==='Escape')closeModals()});
+
+/* ---------- Performers: inline form + "Participants" popup ---------- */
 const ACTS=['Dance','Music','Extra'];
-const countNamesEl=$('#countNames');
+const countNamesEl=$('#countNames'), partCountEl=$('#partCount');
 let performers=[];
 function renderPerformers(){
   ACTS.forEach(a=>{
@@ -118,6 +88,7 @@ function renderPerformers(){
   });
   const uniq=new Set(performers.map(p=>p.name.toLowerCase())).size;
   if(countNamesEl) animateCounter(countNamesEl,uniq);
+  if(partCountEl) partCountEl.textContent=uniq;
 }
 async function loadPerformers(){
   try{
@@ -128,16 +99,8 @@ async function loadPerformers(){
     renderPerformers();
   }catch(e){}
 }
+$('#openParticipants')?.addEventListener('click',()=>{loadPerformers();openModal($('#participantsModal'))});
 const pForm=$('#participateForm'), teamWrap=$('#teamWrap');
-/* the participation form now lives directly on the page; only the
-   "who's performing" line-up still opens as a popup */
-const listModal=$('#participantsModal');
-function openListModal(){listModal?.classList.add('open');document.body.style.overflow='hidden'}
-function closeAnyModal(){$$('.modal.open').forEach(m=>m.classList.remove('open'));document.body.style.overflow=''}
-$('#openParticipants')?.addEventListener('click',openListModal);
-$$('[data-close-modal]').forEach(b=>b.addEventListener('click',closeAnyModal));
-$$('.modal').forEach(m=>m.addEventListener('click',e=>{if(e.target===m)closeAnyModal()}));
-addEventListener('keydown',e=>{if(e.key==='Escape')closeAnyModal()});
 $$('input[name="mode"]').forEach(r=>r.addEventListener('change',()=>{teamWrap.hidden=pForm.elements['mode'].value!=='Group'}));
 pForm?.addEventListener('submit',async e=>{
   e.preventDefault();
@@ -173,56 +136,129 @@ pForm?.addEventListener('submit',async e=>{
 });
 loadPerformers();
 
-/* ---------- Entry pass (payment Transaction ID) ---------- */
-const passForm=$('#passForm'), passDone=$('#passDone');
-passForm?.addEventListener('submit',async e=>{
-  e.preventDefault();
-  const f=passForm.elements;
-  const body={name:f['passName'].value.trim().replace(/\s+/g,' '),phone:f['passPhone'].value.trim(),txn:f['txn'].value.trim()};
-  if(body.phone.replace(/\D/g,'').length<10){toast('Enter a valid phone number');return}
-  if(body.txn.replace(/\s+/g,'').length<6){toast('Enter a valid Transaction ID');return}
-  const btn=passForm.querySelector('button[type="submit"]');
-  btn.disabled=true;
+/* ---------- Entry pass: Register -> choose semester -> Google Form ---------- */
+$('#openRegister')?.addEventListener('click',()=>openModal($('#semModal')));
+$$('.sem-btn').forEach(b=>b.addEventListener('click',()=>{
+  const link=b.dataset.sem==='first'?SITE.formFirstSem:SITE.formThirdFifthSem;
+  closeModals();
+  if(!link){toast('Registration form link coming soon');return}
+  window.open(link,'_blank','noopener');
+}));
+
+/* ---------- Photos, reels & shared drive (stored in Cloudflare R2) ---------- */
+const IMG_MAX=12e6, VID_MAX=60e6;
+const EXT_TYPE={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif',mp4:'video/mp4',mov:'video/quicktime',webm:'video/webm'};
+const OK_TYPES=Object.values(EXT_TYPE);
+const reelList=$('#reelList'), driveGrid=$('#driveGrid'), reelStatus=$('#reelStatus'), driveStatus=$('#driveStatus');
+const reelNameEl=$('#reelName'), driveNameEl=$('#driveName');
+let mediaItems=[];
+const mUrl=k=>'/media/'+String(k).split('/').map(encodeURIComponent).join('/');
+const niceSize=n=>n>=1e6?(n/1e6).toFixed(1)+' MB':Math.max(1,Math.round(n/1e3))+' KB';
+const typeOf=f=>f.type||EXT_TYPE[(f.name.split('.').pop()||'').toLowerCase()]||'';
+try{const saved=localStorage.getItem('fn_uploader');if(saved){if(reelNameEl)reelNameEl.value=saved;if(driveNameEl)driveNameEl.value=saved}}catch(e){}
+function uploaderName(el){
+  const v=(el&&el.value||'').trim();
+  try{if(v)localStorage.setItem('fn_uploader',v)}catch(e){}
+  return v;
+}
+function renderMedia(){
+  const reels=mediaItems.filter(m=>m.section==='reel'), drive=mediaItems.filter(m=>m.section==='drive');
+  if(reelList) reelList.innerHTML=reels.length
+    ? reels.map(m=>`<article class="reel-item">
+        ${m.kind==='video'?`<video src="${mUrl(m.key)}" controls playsinline preload="metadata"></video>`:`<img src="${mUrl(m.key)}" alt="Photo by ${cleanName(m.by||'a student')}" loading="lazy">`}
+        <div class="reel-meta">${m.kind==='video'?'Reel':'Photo'} · ${cleanName(m.by||'Anonymous')}</div>
+      </article>`).join('')
+    : '<div class="reel-empty">Reels and photos uploaded here will appear for everyone ✦</div>';
+  if(driveGrid) driveGrid.innerHTML=drive.map(m=>`<button class="d-item" type="button" data-key="${cleanName(m.key)}">
+      ${m.kind==='video'?`<video src="${mUrl(m.key)}#t=0.1" muted playsinline preload="metadata"></video><span class="tag">▶ VIDEO</span>`:`<img src="${mUrl(m.key)}" alt="" loading="lazy">`}
+      <span class="by">${cleanName(m.by||'Anonymous')}</span></button>`).join('');
+  const setN=(el,n)=>{if(el)animateCounter(el,n)};
+  setN($('#reelSectionCount'),reels.length); setN($('#countReels'),reels.length); setN($('#driveCount'),drive.length);
+}
+async function loadMedia(){
   try{
-    const res=await fetch('/pass',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
-    const out=await res.json().catch(()=>({}));
-    if(!res.ok) throw new Error(out.error||'Could not save. Try again.');
-    passForm.reset();
-    passDone.hidden=false;
-    passDone.innerHTML='✓ <b>Entry pass request received.</b><br>The organisers will verify your payment. Keep your Transaction ID safe.';
-    toast('Entry pass request sent ✓');
-  }catch(err){
-    toast(err.message||'Something went wrong. Try again.');
-  }finally{
-    btn.disabled=false;
+    const res=await fetch('/media',{cache:'no-store'});
+    if(!res.ok) throw new Error('load failed');
+    const d=await res.json();
+    mediaItems=d.items||[];
+    renderMedia();
+  }catch(e){}
+}
+// photos bigger than ~1 MB are shrunk in the browser first (saves storage, uploads faster)
+async function shrinkImage(file,type){
+  if(type==='image/gif'||file.size<1.2e6) return file;
+  try{
+    const bmp=await createImageBitmap(file,{imageOrientation:'from-image'});
+    const k=Math.min(1,2200/Math.max(bmp.width,bmp.height));
+    const c=document.createElement('canvas');c.width=Math.round(bmp.width*k);c.height=Math.round(bmp.height*k);
+    const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);ctx.drawImage(bmp,0,0,c.width,c.height);
+    const blob=await new Promise(r=>c.toBlob(r,'image/jpeg',.85));
+    if(blob&&blob.size<file.size) return new File([blob],(file.name.replace(/\.\w+$/,'')||'photo')+'.jpg',{type:'image/jpeg'});
+  }catch(e){}
+  return file;
+}
+function uploadOne(file,type,section,name,onProgress){
+  return new Promise((resolve,reject)=>{
+    const xhr=new XMLHttpRequest();
+    xhr.open('POST',`/upload?section=${section}&name=${encodeURIComponent(name)}&filename=${encodeURIComponent(file.name)}`);
+    xhr.setRequestHeader('Content-Type',type);
+    xhr.upload.onprogress=e=>{if(e.lengthComputable)onProgress(e.loaded/e.total)};
+    xhr.onload=()=>{let d={};try{d=JSON.parse(xhr.responseText)}catch(e){}xhr.status>=200&&xhr.status<300?resolve(d):reject(new Error(d.error||'Upload failed. Try again.'))};
+    xhr.onerror=()=>reject(new Error('Network problem. Please try again.'));
+    xhr.send(file);
+  });
+}
+async function handleFiles(fileList,section,statusEl,nameEl){
+  const files=[...fileList];
+  if(!files.length||!statusEl) return;
+  const name=uploaderName(nameEl);
+  let ok=0;
+  for(const original of files){
+    const row=document.createElement('div');row.className='up-row';
+    const label=document.createElement('span');const bar=document.createElement('div');bar.className='bar';const fill=document.createElement('i');bar.appendChild(fill);
+    row.append(label,bar);statusEl.appendChild(row);
+    label.textContent=original.name;
+    const fail=msg=>{row.classList.add('err');label.textContent=`${original.name} — ${msg}`;bar.remove()};
+    let type=typeOf(original);
+    if(!OK_TYPES.includes(type)){fail('not a supported photo or video');continue}
+    let file=original;
+    if(type.startsWith('image/')){file=await shrinkImage(original,type);type=typeOf(file)||type}
+    const max=type.startsWith('video/')?VID_MAX:IMG_MAX;
+    if(file.size>max){fail(`too big (max ${Math.round(max/1e6)} MB)`);continue}
+    label.textContent=`${file.name} · ${niceSize(file.size)}`;
+    try{
+      await uploadOne(file,type,section,name,p=>{fill.style.width=Math.round(p*100)+'%'});
+      fill.style.width='100%';row.classList.add('done');ok++;
+    }catch(err){fail(err.message)}
   }
+  if(ok){
+    toast(`${ok} file${ok>1?'s':''} uploaded ✓`);
+    await loadMedia();
+    if(section==='reel'&&reelList) requestAnimationFrame(()=>reelList.scrollTo({left:0,behavior:'smooth'}));
+  }
+  setTimeout(()=>statusEl.querySelectorAll('.up-row.done').forEach(r=>r.remove()),4000);
+}
+$('#reelFiles')?.addEventListener('change',e=>{handleFiles(e.target.files,'reel',reelStatus,reelNameEl);e.target.value=''});
+$('#driveFiles')?.addEventListener('change',e=>{handleFiles(e.target.files,'drive',driveStatus,driveNameEl);e.target.value=''});
+const dz=$('#dropzone');
+if(dz){
+  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.add('drag')}));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();dz.classList.remove('drag')}));
+  dz.addEventListener('drop',e=>{if(e.dataTransfer&&e.dataTransfer.files.length)handleFiles(e.dataTransfer.files,'drive',driveStatus,driveNameEl)});
+}
+// tap a drive photo -> big view with download
+driveGrid?.addEventListener('click',e=>{
+  const b=e.target.closest('.d-item');if(!b)return;
+  const m=mediaItems.find(x=>x.key===b.dataset.key);if(!m)return;
+  $('#lbBody').innerHTML=m.kind==='video'?`<video src="${mUrl(m.key)}" controls autoplay playsinline></video>`:`<img src="${mUrl(m.key)}" alt="">`;
+  $('#lbBy').textContent=`${m.kind==='video'?'Video':'Photo'} by ${m.by||'Anonymous'}`;
+  $('#lbDownload').href=mUrl(m.key)+'?download=1';
+  openModal($('#lightbox'));
 });
-$('#copyUpi')?.addEventListener('click',async()=>{
-  try{await navigator.clipboard.writeText(SITE.upiId);toast('UPI ID copied ✓')}catch(e){toast(SITE.upiId)}
-});
+loadMedia();
 
-
-// Local reel previews: every selected reel becomes a large side-by-side playable card.
-const reelFiles=$('#reelFiles'), reelList=$('#reelList'), reelCounter=$('#countReels'), reelSectionCount=$('#reelSectionCount');
-let localReels=[];
+/* reels: slider / show-all + drag to scroll */
 let reelDragDown=false,reelDragStart=0,reelDragScroll=0;
-function updateReelCounters(){
-  const n=localReels.length;
-  if(reelCounter) animateCounter(reelCounter,n);
-  if(reelSectionCount) animateCounter(reelSectionCount,n);
-}
-function renderReels(){
-  if(!localReels.length){
-    reelList.innerHTML='<div class="reel-empty">Your uploaded reels will appear here ✦</div>';
-  }else{
-    reelList.innerHTML=localReels.map((r,i)=>`<article class="reel-item">
-      <video src="${r.url}" controls playsinline preload="metadata"></video>
-      <div class="reel-meta">Reel ${i+1} · ${r.file.name.replace(/[<>"']/g,'')}</div>
-      <div class="media-actions"><a class="media-download" href="${r.url}" download="${r.file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}" aria-label="Download reel ${i+1}">↓ Download</a></div>
-    </article>`).join('');
-  }
-  updateReelCounters();
-}
 const reelMoreBtn=$('#reelMoreBtn');
 reelMoreBtn?.addEventListener('click',()=>{
   const open=reelList.classList.toggle('all-reels');
@@ -230,17 +266,6 @@ reelMoreBtn?.addEventListener('click',()=>{
   reelMoreBtn.setAttribute('aria-expanded',String(open));
   reelMoreBtn.setAttribute('aria-label',open?'Show reels as a slider':'Show all reels');
   if(open) reelList.scrollLeft=0;
-});
-
-reelFiles?.addEventListener('change',()=>{
-  const files=[...(reelFiles.files||[])].filter(f=>f.type.startsWith('video/'));
-  files.forEach(file=>localReels.push({file,url:URL.createObjectURL(file)}));
-  renderReels();
-  reelFiles.value='';
-  if(files.length){
-    toast(`${files.length} reel${files.length>1?'s':''} posted ✓`);
-    requestAnimationFrame(()=>reelList.scrollTo({left:reelList.scrollWidth,behavior:'smooth'}));
-  }
 });
 reelList?.addEventListener('pointerdown',e=>{
   if(e.pointerType==='mouse' && e.button!==0)return;
@@ -269,6 +294,8 @@ function updateCountdown(){
   cd.h.textContent=String(hours).padStart(2,'0');
   cd.m.textContent=String(mins).padStart(2,'0');
   cd.s.textContent=String(secs).padStart(2,'0');
+  const hc={d:$('#hcD'),h:$('#hcH'),m:$('#hcM'),s:$('#hcS')};
+  if(hc.d){hc.d.textContent=String(days).padStart(2,'0');hc.h.textContent=String(hours).padStart(2,'0');hc.m.textContent=String(mins).padStart(2,'0');hc.s.textContent=String(secs).padStart(2,'0')}
   cd.status.textContent=`${days} day${days===1?'':'s'} to go · get ready ✦`;
 }
 updateCountdown();setInterval(updateCountdown,1000);
@@ -307,27 +334,4 @@ if(creatorAvatarEl && CREATOR_PHOTO){creatorAvatarEl.innerHTML=`<img src="${CREA
 
   // poster: shows poster.jpg if it exists
   const pf=$('.poster-frame');
-  if(pf){const im=new Image();im.alt="Freshers' Night official poster";im.style.cssText='display:block;width:100%;height:auto;border-radius:inherit';
-    im.onload=()=>{const ph=pf.querySelector('.poster-placeholder');if(ph)ph.remove();pf.appendChild(im);const n=$('.poster-note');if(n)n.remove()};im.src=SITE.posterImage}
-
-  // Instagram: username, follower number (typed by you) and profile button
-  const igF=$('#igFollowers'); if(igF) igF.textContent=Number.isFinite(+SITE.followers)?Number(SITE.followers).toLocaleString('en-IN'):SITE.followers;
-  const igB=$('#igFollow'); if(igB){igB.href='https://www.instagram.com/'+SITE.instagram+'/';igB.textContent='Follow @'+SITE.instagram+' ↗'}
-})();
-
-/* ---------- Big "Register on Google Form" button -> semester popup ---------- */
-// Paste your real Google Form links here. "senior" is used for both 3rd and 5th semester.
-const GOOGLE_FORMS={
-  first:'',   // 1st semester Google Form link
-  senior:''   // 3rd & 5th semester Google Form link
-};
-const semPopup=$('#semPopup');
-$('#bigRegisterBtn')?.addEventListener('click',()=>{semPopup?.classList.add('open');document.body.style.overflow='hidden'});
-$('#semClose')?.addEventListener('click',()=>{semPopup?.classList.remove('open');document.body.style.overflow=''});
-semPopup?.addEventListener('click',e=>{if(e.target===semPopup){semPopup.classList.remove('open');document.body.style.overflow=''}});
-$$('.sem-options button').forEach(b=>b.addEventListener('click',()=>{
-  const link=GOOGLE_FORMS[b.dataset.sem];
-  semPopup.classList.remove('open');document.body.style.overflow='';
-  if(link) window.open(link,'_blank','noopener');
-  else toast('Add your Google Form link in script.js → GOOGLE_FORMS');
-}));
+  if(pf){const im=new Image();im.alt="Freshers' Night official poster";im.style.cssText='displa
