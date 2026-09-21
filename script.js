@@ -6,10 +6,10 @@ const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
    ===================================================================== */
 const SITE={
   eventDate:'2026-10-07T18:00:00+05:30', // date + start time (also drives the countdown)
-  venueName:'Venue name',                // e.g. 'Gurucharan University Auditorium'
-  venueAddress:'Full address here',
-  mapLink:'',                            // paste the Google Maps share link (optional)
-  mapQuery:'',                           // e.g. 'Gurucharan University Silchar' -> shows a live map
+  venueName:'Gurucharan University auditorium',                // e.g. 'Gurucharan University Auditorium'
+  venueAddress:'Gurucharan University,Silchar,Assam 788004',
+  mapLink:'https://maps.app.goo.gl/UFzKdN4YdFJgcXBd8',                            // paste the Google Maps share link (optional)
+  mapQuery:'Gurucharan University,Silchar',                           // e.g. 'Gurucharan University Silchar' -> shows a live map
   dressCode:'TBA',                       // e.g. 'Party wear / Ethnic'
   reportingTime:'TBA',                   // e.g. '5:30 PM'
   deadline:'TBA',                        // e.g. '5 October, 6:00 PM'
@@ -18,7 +18,7 @@ const SITE={
   formThirdFifthSem:'',                  // Google Form link for 3rd and 5th semester students
   posterImage:'poster.jpg',              // upload the poster with this name
   instagram:'abhijit_kb',                // Instagram username (without @)
-  followers:'—',                         // type the follower number here, e.g. 1250
+  followers:'1300+',                         // type the follower number here, e.g. 1250
   contacts:[                             // shown in the footer and FAQ
     {name:'Contact name',phone:'+91XXXXXXXXXX'}
   ]
