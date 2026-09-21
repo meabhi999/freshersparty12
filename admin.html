@@ -30,7 +30,19 @@ th{color:#b7afbd;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
 .msg{color:#ff8fb5;min-height:22px;margin:8px 0}
 .badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700}
 .badge.v{background:#19d8cf;color:#062a28}.badge.p{background:#3a2d52;color:#ffd48a}
-.hide{display:none}
+.hide{display:none!important}
+.usage{margin-bottom:14px}
+.usage .track{height:12px;border-radius:12px;background:rgba(255,255,255,.1);overflow:hidden}
+.usage .track i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ff2f92,#ff7a3d)}
+.usage p{margin:8px 0 0;color:#b7afbd;font-size:13px}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:12px}
+.mitem{position:relative;border:1px solid rgba(255,255,255,.12);border-radius:14px;overflow:hidden;background:#120c1e}
+.mitem img,.mitem video{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:#000}
+.mitem .minfo{padding:8px 10px;font-size:12px;color:#cfc7d4;line-height:1.5}
+.mitem .minfo b{color:#fff}
+.mitem .mchk{position:absolute;top:8px;left:8px;background:rgba(0,0,0,.6);border-radius:8px;padding:4px 6px;display:flex}
+.mitem .mchk input{width:18px;height:18px;padding:0}
+.mitem button.del{width:calc(100% - 20px);margin:0 10px 10px}
 </style>
 </head>
 <body>
@@ -49,6 +61,7 @@ th{color:#b7afbd;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
     <div class="row">
       <button class="tab on" id="tabReg">Performers</button>
       <button class="tab" id="tabPass">Entry passes</button>
+      <button class="tab" id="tabMedia">Photos &amp; reels</button>
     </div>
     <div class="stats" id="stats"></div>
     <div class="row">
@@ -56,7 +69,12 @@ th{color:#b7afbd;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
       <button class="ghost" id="refresh">Refresh</button>
       <button id="csv">Download CSV</button>
     </div>
-    <div class="wrap">
+    <div id="mediaView" class="hide">
+      <div class="usage"><div class="track"><i id="usageBar"></i></div><p id="usageTxt"></p></div>
+      <div class="row"><button class="ghost" id="selAll">Select all</button><button class="del small" id="delSel" style="padding:12px 14px">Delete selected</button></div>
+      <div class="mgrid" id="mgrid"></div>
+    </div>
+    <div class="wrap" id="tableWrap">
       <table>
         <thead id="head"></thead>
         <tbody id="rows"></tbody>
@@ -67,7 +85,7 @@ th{color:#b7afbd;font-size:12px;text-transform:uppercase;letter-spacing:.06em}
 
 <script>
 const $ = (s) => document.querySelector(s);
-let password = '', view = 'reg', regs = [], passes = [];
+let password = '', view = 'reg', regs = [], passes = [], media = { items: [], used: 0, cap: 0 };
 const fmt = (t) => (t ? new Date(t).toLocaleString('en-IN') : '');
 
 function setMsg(t){ $('#msg').textContent = t || ''; }
@@ -83,10 +101,12 @@ async function api(path, method, body){
 
 async function load(){
   setMsg('');
-  const [a, b] = await Promise.all([api('/names'), api('/pass')]);
-  if (a.status === 401 || b.status === 401) { setMsg('Wrong password'); return false; }
+  const [a, b, c] = await Promise.all([api('/names'), api('/pass'), api('/media')]);
+  if (a.status === 401 || b.status === 401 || c.status === 401) { setMsg('Wrong password'); return false; }
   if (!a.ok || !b.ok) { setMsg('Could not load. Try again.'); return false; }
   regs = await a.json(); passes = await b.json();
+  media = c.ok ? await c.json() : { items: [], used: 0, cap: 0 };
+  if (media.ready === false) setMsg('Photo storage (R2) is not connected yet.');
   $('#login').classList.add('hide');
   $('#panel').classList.remove('hide');
   render();
@@ -112,7 +132,56 @@ function btn(label, cls, fn){
   b.style.marginRight = '6px'; b.onclick = fn; return b;
 }
 
+function fmtSize(n){ return n >= 1e9 ? (n / 1e9).toFixed(2) + ' GB' : n >= 1e6 ? (n / 1e6).toFixed(1) + ' MB' : Math.round(n / 1e3) + ' KB'; }
+
+function renderMedia(){
+  const items = media.items || [];
+  $('#stats').innerHTML = '';
+  stat('Files', items.length); stat('Used', fmtSize(media.used || 0)); stat('Limit', fmtSize(media.cap || 0));
+  const pct = media.cap ? Math.min(100, (media.used || 0) / media.cap * 100) : 0;
+  $('#usageBar').style.width = pct + '%';
+  $('#usageTxt').textContent = pct.toFixed(1) + '% of the limit used. When the limit is reached the oldest files are deleted automatically.';
+  const g = $('#mgrid'); g.innerHTML = '';
+  items.forEach(m => {
+    const d = document.createElement('div'); d.className = 'mitem';
+    const url = '/media/' + m.key;
+    const el = document.createElement(m.kind === 'video' ? 'video' : 'img');
+    if (m.kind === 'video') { el.src = url + '#t=0.1'; el.controls = true; el.preload = 'metadata'; el.muted = true; el.playsInline = true; }
+    else { el.src = url; el.loading = 'lazy'; el.alt = m.filename || 'photo'; }
+    d.appendChild(el);
+    const l = document.createElement('label'); l.className = 'mchk';
+    const cb = document.createElement('input'); cb.type = 'checkbox'; cb.dataset.key = m.key; l.appendChild(cb); d.appendChild(l);
+    const info = document.createElement('div'); info.className = 'minfo';
+    const who = document.createElement('b'); who.textContent = m.by || 'Anonymous';
+    info.appendChild(who);
+    info.appendChild(document.createTextNode(' · ' + (m.section === 'drive' ? 'Drive' : 'Reels') + ' · ' + fmtSize(m.size)));
+    info.appendChild(document.createElement('br'));
+    info.appendChild(document.createTextNode(fmt(m.time)));
+    d.appendChild(info);
+    const b = document.createElement('button'); b.className = 'small del'; b.textContent = 'Delete';
+    b.onclick = () => removeMedia([m.key]); d.appendChild(b);
+    g.appendChild(d);
+  });
+}
+
+async function removeMedia(keys){
+  if (!keys.length) return;
+  if (!confirm('Delete ' + keys.length + ' file' + (keys.length > 1 ? 's' : '') + '?')) return;
+  const res = await api('/media', 'DELETE', { keys });
+  if (!res.ok) return setMsg('Could not delete.');
+  const gone = new Set(keys);
+  const freed = media.items.filter(m => gone.has(m.key)).reduce((s, m) => s + m.size, 0);
+  media.items = media.items.filter(m => !gone.has(m.key)); media.used = Math.max(0, (media.used || 0) - freed);
+  render();
+}
+
 function render(){
+  const isMedia = view === 'media';
+  $('#tableWrap').classList.toggle('hide', isMedia);
+  $('#mediaView').classList.toggle('hide', !isMedia);
+  $('#csv').classList.toggle('hide', isMedia);
+  $('#search').classList.toggle('hide', isMedia);
+  if (isMedia) return renderMedia();
   const q = $('#search').value.trim().toLowerCase();
   $('#stats').innerHTML = '';
   const tb = $('#rows'); tb.innerHTML = '';
@@ -176,11 +245,14 @@ function downloadCsv(){
 }
 
 function setView(v){
-  view = v; $('#tabReg').classList.toggle('on', v === 'reg'); $('#tabPass').classList.toggle('on', v === 'pass');
+  view = v; $('#tabReg').classList.toggle('on', v === 'reg'); $('#tabPass').classList.toggle('on', v === 'pass'); $('#tabMedia').classList.toggle('on', v === 'media');
   $('#search').value = ''; render();
 }
 $('#tabReg').onclick = () => setView('reg');
 $('#tabPass').onclick = () => setView('pass');
+$('#tabMedia').onclick = () => setView('media');
+$('#selAll').onclick = () => { const boxes = [...document.querySelectorAll('#mgrid input[type=checkbox]')]; const all = boxes.every(b => b.checked); boxes.forEach(b => b.checked = !all); };
+$('#delSel').onclick = () => removeMedia([...document.querySelectorAll('#mgrid input:checked')].map(b => b.dataset.key));
 $('#loginBtn').onclick = async () => {
   password = $('#pw').value; if (!password) return;
   if (await load()) { try { sessionStorage.setItem('fn_admin', password); } catch (e) {} }
