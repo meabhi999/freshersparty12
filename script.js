@@ -297,9 +297,9 @@ function updateCountdown(){
 updateCountdown();setInterval(updateCountdown,1000);
 
 // Creator footer — replace these two values with the designer's real name/photo.
-const CREATOR_NAME='YOUR NAME';
-const CREATOR_PHOTO='';
-const creatorNameEl=$('#creatorName'), creatorAvatarEl=$('#creatorAvatar');
+const CREATOR_NAME='Abhijit Kangso Banik';
+const CREATOR_PHOTO='photo/Abhi.jpg';
+const creatorNameEl=$('#Abhi'), creatorAvatarEl=$('#creatorAvatar');
 if(creatorNameEl) creatorNameEl.textContent=CREATOR_NAME;
 if(creatorAvatarEl && CREATOR_PHOTO){creatorAvatarEl.innerHTML=`<img src="${CREATOR_PHOTO}" alt="${CREATOR_NAME}">`;creatorAvatarEl.querySelector('img').style.display='block';}
 
