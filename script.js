@@ -134,9 +134,7 @@ pForm?.addEventListener('submit',async e=>{
     btn.disabled=false;
   }
 });
-loadPerformers();
-
-/* ---------- Entry pass: Register -> choose semester -> Google Form ---------- */
+loadPerformers();/* ---------- Entry pass: Register -> choose semester -> Google Form ---------- */
 $('#openRegister')?.addEventListener('click',()=>openModal($('#semModal')));
 $$('.sem-btn').forEach(b=>b.addEventListener('click',()=>{
   const link=b.dataset.sem==='first'?SITE.formFirstSem:SITE.formThirdFifthSem;
@@ -255,9 +253,7 @@ driveGrid?.addEventListener('click',e=>{
   $('#lbDownload').href=mUrl(m.key)+'?download=1';
   openModal($('#lightbox'));
 });
-loadMedia();
-
-/* reels: slider / show-all + drag to scroll */
+loadMedia();/* reels: slider / show-all + drag to scroll */
 let reelDragDown=false,reelDragStart=0,reelDragScroll=0;
 const reelMoreBtn=$('#reelMoreBtn');
 reelMoreBtn?.addEventListener('click',()=>{
@@ -334,4 +330,10 @@ if(creatorAvatarEl && CREATOR_PHOTO){creatorAvatarEl.innerHTML=`<img src="${CREA
 
   // poster: shows poster.jpg if it exists
   const pf=$('.poster-frame');
-  if(pf){const im=new Image();im.alt="Freshers' Night official poster";im.style.cssText='displa
+  if(pf){const im=new Image();im.alt="Freshers' Night official poster";im.style.cssText='display:block;width:100%;height:auto;border-radius:inherit';
+    im.onload=()=>{const ph=pf.querySelector('.poster-placeholder');if(ph)ph.remove();pf.appendChild(im);const n=$('.poster-note');if(n)n.remove()};im.src=SITE.posterImage}
+
+  // Instagram: username, follower number (typed by you) and profile button
+  const igF=$('#igFollowers'); if(igF) igF.textContent=Number.isFinite(+SITE.followers)?Number(SITE.followers).toLocaleString('en-IN'):SITE.followers;
+  const igB=$('#igFollow'); if(igB){igB.href='https://www.instagram.com/'+SITE.instagram+'/';igB.textContent='Follow @'+SITE.instagram+' ↗'}
+})();
